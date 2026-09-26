@@ -4,9 +4,11 @@ import { useState, Suspense } from "react";
 import { useRouter, useSearchParams } from "next/navigation";
 import { GraduationCap, Lock, Mail, User, Shield, Sparkles, AlertCircle } from "lucide-react";
 import { authApi } from "@/lib/api";
+import { useLanguage } from "@/lib/i18n";
 
 function AuthForm() {
   const router = useRouter();
+  const { t } = useLanguage();
   const searchParams = useSearchParams();
   const initialTab = searchParams.get("tab") === "register" ? "register" : "login";
 
@@ -87,34 +89,34 @@ function AuthForm() {
             <GraduationCap className="h-7 w-7" />
           </div>
           <h2 className="text-2xl sm:text-3xl font-extrabold text-stone-900 dark:text-white">
-            {tab === "login" ? "Access Scholarship Portal" : "Student Registration"}
+            {tab === "login" ? t("loginTitle") : t("registerTitle")}
           </h2>
           <p className="text-xs text-stone-500">
-            Single Sign-On for Tribal Students & Ministry Scrutiny Officers
+            {t("loginSub")}
           </p>
         </div>
 
         {/* Demo Quick-Fill Buttons for SIH Evaluators */}
         <div className="rounded-2xl border border-orange-200/80 dark:border-stone-800 bg-orange-50/70 dark:bg-stone-900 p-3.5 space-y-2 text-xs">
           <div className="flex items-center gap-1.5 font-bold text-orange-900 dark:text-orange-300 text-[11px]">
-            <Sparkles className="h-3.5 w-3.5 text-orange-600" /> SIH Evaluator Quick Access (Pre-seeded Accounts):
+            <Sparkles className="h-3.5 w-3.5 text-orange-600" /> {t("evaluatorQuickAccess")}
           </div>
           <div className="grid grid-cols-1 sm:grid-cols-2 gap-2">
             <button
               type="button"
               onClick={fillDemoStudent}
-              className="text-left p-2 rounded-xl bg-white dark:bg-stone-800 border border-orange-200/60 dark:border-stone-700 hover:border-orange-400 transition-all"
+              className="text-left p-2 rounded-xl bg-white dark:bg-stone-800 border border-orange-200/60 dark:border-stone-700 hover:border-orange-400 transition-all cursor-pointer"
             >
-              <div className="font-bold text-stone-900 dark:text-white">Demo Student</div>
-              <div className="text-[10px] text-stone-500">Birsa Soren (ST / Santhal)</div>
+              <div className="font-bold text-stone-900 dark:text-white">{t("demoStudent")}</div>
+              <div className="text-[10px] text-stone-500">{t("demoStudentDesc")}</div>
             </button>
             <button
               type="button"
               onClick={fillDemoAdmin}
-              className="text-left p-2 rounded-xl bg-white dark:bg-stone-800 border border-orange-200/60 dark:border-stone-700 hover:border-orange-400 transition-all"
+              className="text-left p-2 rounded-xl bg-white dark:bg-stone-800 border border-orange-200/60 dark:border-stone-700 hover:border-orange-400 transition-all cursor-pointer"
             >
-              <div className="font-bold text-stone-900 dark:text-white">Ministry Officer</div>
-              <div className="text-[10px] text-stone-500">Tribal Welfare Admin</div>
+              <div className="font-bold text-stone-900 dark:text-white">{t("demoOfficer")}</div>
+              <div className="text-[10px] text-stone-500">{t("demoOfficerDesc")}</div>
             </button>
           </div>
         </div>
@@ -129,13 +131,13 @@ function AuthForm() {
                 setTab("login");
                 setErrorMsg("");
               }}
-              className={`flex-1 py-2 rounded-lg transition-all ${
+              className={`flex-1 py-2 rounded-lg transition-all cursor-pointer ${
                 tab === "login"
                   ? "bg-white dark:bg-stone-700 text-orange-600 dark:text-orange-300 shadow-xs"
                   : "text-stone-600 dark:text-stone-400"
               }`}
             >
-              Sign In
+              {t("navSignIn")}
             </button>
             <button
               type="button"
@@ -143,13 +145,13 @@ function AuthForm() {
                 setTab("register");
                 setErrorMsg("");
               }}
-              className={`flex-1 py-2 rounded-lg transition-all ${
+              className={`flex-1 py-2 rounded-lg transition-all cursor-pointer ${
                 tab === "register"
                   ? "bg-white dark:bg-stone-700 text-orange-600 dark:text-orange-300 shadow-xs"
                   : "text-stone-600 dark:text-stone-400"
               }`}
             >
-              Register as Student
+              {t("registerAsStudent")}
             </button>
           </div>
 
@@ -165,7 +167,7 @@ function AuthForm() {
             <form onSubmit={handleLogin} className="space-y-4 text-xs sm:text-sm">
               <div className="space-y-1">
                 <label className="font-semibold text-stone-700 dark:text-stone-300">
-                  Email Address
+                  {t("emailAddr").replace("*", "").trim()}
                 </label>
                 <div className="relative">
                   <Mail className="absolute left-3.5 top-3 h-4 w-4 text-stone-400" />
@@ -182,7 +184,7 @@ function AuthForm() {
 
               <div className="space-y-1">
                 <label className="font-semibold text-stone-700 dark:text-stone-300">
-                  Password
+                  {t("passwordLabel")}
                 </label>
                 <div className="relative">
                   <Lock className="absolute left-3.5 top-3 h-4 w-4 text-stone-400" />
@@ -200,16 +202,16 @@ function AuthForm() {
               <button
                 type="submit"
                 disabled={loading}
-                className="w-full rounded-xl bg-gradient-to-r from-orange-600 to-amber-600 py-3 text-xs sm:text-sm font-bold text-white shadow-md shadow-orange-600/20 hover:from-orange-500 hover:to-amber-500 disabled:opacity-50 transition-all active:scale-98"
+                className="w-full rounded-xl bg-gradient-to-r from-orange-600 to-amber-600 py-3 text-xs sm:text-sm font-bold text-white shadow-md shadow-orange-600/20 hover:from-orange-500 hover:to-amber-500 disabled:opacity-50 transition-all active:scale-98 cursor-pointer"
               >
-                {loading ? "Authenticating..." : "Sign In to Portal"}
+                {loading ? t("signingInBtn") : t("signInBtn")}
               </button>
             </form>
           ) : (
             /* Register Form */
             <form onSubmit={handleRegister} className="space-y-4 text-xs">
               <div className="space-y-1">
-                <label className="font-semibold text-stone-700 dark:text-stone-300">Full Name</label>
+                <label className="font-semibold text-stone-700 dark:text-stone-300">{t("fullName").replace("*", "").trim()}</label>
                 <div className="relative">
                   <User className="absolute left-3.5 top-2.5 h-4 w-4 text-stone-400" />
                   <input
@@ -225,7 +227,7 @@ function AuthForm() {
 
               <div className="grid grid-cols-1 sm:grid-cols-2 gap-3">
                 <div className="space-y-1">
-                  <label className="font-semibold text-stone-700 dark:text-stone-300">Email Address</label>
+                  <label className="font-semibold text-stone-700 dark:text-stone-300">{t("emailAddr").replace("*", "").trim()}</label>
                   <input
                     type="email"
                     required
@@ -237,7 +239,7 @@ function AuthForm() {
                 </div>
 
                 <div className="space-y-1">
-                  <label className="font-semibold text-stone-700 dark:text-stone-300">Phone</label>
+                  <label className="font-semibold text-stone-700 dark:text-stone-300">{t("phoneLabel")}</label>
                   <input
                     type="tel"
                     value={regData.phone}
@@ -250,7 +252,7 @@ function AuthForm() {
 
               <div className="grid grid-cols-1 sm:grid-cols-2 gap-3">
                 <div className="space-y-1">
-                  <label className="font-semibold text-stone-700 dark:text-stone-300">Caste Category</label>
+                  <label className="font-semibold text-stone-700 dark:text-stone-300">{t("casteCat").replace("*", "").trim()}</label>
                   <select
                     value={regData.category}
                     onChange={(e) => setRegData({ ...regData, category: e.target.value })}
@@ -264,7 +266,7 @@ function AuthForm() {
                 </div>
 
                 <div className="space-y-1">
-                  <label className="font-semibold text-stone-700 dark:text-stone-300">Tribal Community</label>
+                  <label className="font-semibold text-stone-700 dark:text-stone-300">{t("tribalComm").replace("*", "").trim()}</label>
                   <select
                     value={regData.tribeName}
                     onChange={(e) => setRegData({ ...regData, tribeName: e.target.value })}
@@ -284,7 +286,7 @@ function AuthForm() {
 
               <div className="grid grid-cols-1 sm:grid-cols-2 gap-3">
                 <div className="space-y-1">
-                  <label className="font-semibold text-stone-700 dark:text-stone-300">Annual Family Income (₹)</label>
+                  <label className="font-semibold text-stone-700 dark:text-stone-300">{t("annualIncome").replace("*", "").trim()}</label>
                   <input
                     type="number"
                     value={regData.annualFamilyIncome}
@@ -295,7 +297,7 @@ function AuthForm() {
                 </div>
 
                 <div className="space-y-1">
-                  <label className="font-semibold text-stone-700 dark:text-stone-300">Password</label>
+                  <label className="font-semibold text-stone-700 dark:text-stone-300">{t("passwordLabel")}</label>
                   <input
                     type="password"
                     required
@@ -310,9 +312,9 @@ function AuthForm() {
               <button
                 type="submit"
                 disabled={loading}
-                className="w-full rounded-xl bg-gradient-to-r from-orange-600 to-amber-600 py-3 text-xs sm:text-sm font-bold text-white shadow-md shadow-orange-600/20 hover:from-orange-500 hover:to-amber-500 disabled:opacity-50 transition-all active:scale-98 mt-2"
+                className="w-full rounded-xl bg-gradient-to-r from-orange-600 to-amber-600 py-3 text-xs sm:text-sm font-bold text-white shadow-md shadow-orange-600/20 hover:from-orange-500 hover:to-amber-500 disabled:opacity-50 transition-all active:scale-98 mt-2 cursor-pointer"
               >
-                {loading ? "Registering Profile..." : "Create Student Account"}
+                {loading ? t("registeringBtn") : t("createAccountBtn")}
               </button>
             </form>
           )}

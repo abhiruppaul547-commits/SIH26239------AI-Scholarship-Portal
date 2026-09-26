@@ -252,7 +252,12 @@ def chat_vernacular(req: ChatRequest):
     Production-grade LLM-powered Vernacular Chatbot Assistant backed by Google Gemini
     with graceful fallback to multi-lingual rule-based NLP engine.
     """
-    lang = detect_language(req.message, req.language or "en")
+    # Respect explicit user-selected language first
+    user_pref = normalize_lang_code(req.language)
+    if user_pref in ["hi", "sat", "bn", "as"]:
+        lang = user_pref
+    else:
+        lang = detect_language(req.message, user_pref)
     user_msg = req.message.strip()
 
     # Default localized suggestions
@@ -267,17 +272,35 @@ def chat_vernacular(req: ChatRequest):
 
     # 1. Attempt Production LLM Generation via Google Gemini Model Cascade
     if gemini_client is not None:
-        language_instructions = {
-            "hi": "Respond in clear, respectful, natural Hindi (Devanagari script).",
-            "bn": "Respond in clear, polite, natural Bengali (বাংলা).",
-            "as": "Respond in clear, polite, natural Assamese (অসমীয়া).",
-            "sat": "Respond in Santhali (Santali) with traditional Johar (Ol Chiki or Latin script).",
-            "en": "Respond in clear, professional English."
+        target_lang_names = {
+            "hi": "HINDI (हिन्दी - देवनागरी लिपि)",
+            "bn": "BENGALI (বাংলা - বাংলা লিপি)",
+            "as": "ASSAMESE (অসমীয়া - অসমীয়া লিপি)",
+            "sat": "SANTHALI (ᱥᱟᱱᱛᱟᱲᱤ - Ol Chiki or Latin with traditional Johar)",
+            "en": "ENGLISH"
         }
-        lang_directive = language_instructions.get(lang, "Respond in clear English.")
+        target_name = target_lang_names.get(lang, "ENGLISH")
 
-        prompt_input = f"""Language Requirement: {lang_directive}
-User Message: {user_msg}
+        if lang == "en":
+            prompt_input = f"""The user is asking in English.
+Respond in clear, professional English with bullet points and friendly tone.
+
+User Question: {user_msg}
+
+Remember to end with:
+SUGGESTIONS: <Brief Followup Query 1> | <Brief Followup Query 2> | <Brief Followup Query 3>
+"""
+        else:
+            prompt_input = f"""*** CRITICAL MANDATORY INSTRUCTION - LANGUAGE ENFORCEMENT ***
+The applicant has selected their regional portal language as: {target_name}.
+You MUST generate your ENTIRE response, headings, bullet points, explanations, and advice 100% strictly in {target_name}.
+Under NO CIRCUMSTANCES should you reply in English or mix English sentences when the selected language is {target_name}.
+Even if the user's inquiry contains English words or English scheme names, your entire explanation MUST be translated and explained in {target_name}.
+
+User Question: {user_msg}
+
+Remember to conclude with exactly one line in this format:
+SUGGESTIONS: <Question 1 in {target_name}> | <Question 2 in {target_name}> | <Question 3 in {target_name}>
 """
 
         candidate_models = ["gemini-3.5-flash-lite", "gemini-3.8-flash"]

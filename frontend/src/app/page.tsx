@@ -14,11 +14,11 @@ import {
   ShieldCheck,
 } from "lucide-react";
 import { scholarshipApi } from "@/lib/api";
-import { useLanguage } from "@/lib/i18n";
+import { useLanguage, translateScheme } from "@/lib/i18n";
 
 export default function Home() {
   const [schemes, setSchemes] = useState<any[]>([]);
-  const { t } = useLanguage();
+  const { t, language } = useLanguage();
 
   useEffect(() => {
     scholarshipApi
@@ -289,7 +289,9 @@ export default function Home() {
         </div>
 
         <div className="grid grid-cols-1 md:grid-cols-3 gap-6">
-          {schemes.slice(0, 3).map((scheme) => (
+          {schemes.slice(0, 3).map((rawScheme) => {
+            const scheme = translateScheme(rawScheme, language);
+            return (
             <div
               key={scheme.id}
               className="flex flex-col justify-between rounded-2xl border border-stone-200/80 dark:border-stone-800 bg-white dark:bg-stone-900 p-6 shadow-xs hover:shadow-md transition-shadow"
@@ -333,7 +335,8 @@ export default function Home() {
                 </Link>
               </div>
             </div>
-          ))}
+          );
+        })}
         </div>
       </section>
     </div>

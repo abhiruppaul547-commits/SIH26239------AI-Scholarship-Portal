@@ -17,13 +17,13 @@ import {
 } from "lucide-react";
 import { scholarshipApi, applicationApi, authApi } from "@/lib/api";
 import FileUploader from "@/components/FileUploader";
-import { useLanguage } from "@/lib/i18n";
+import { useLanguage, translateScheme } from "@/lib/i18n";
 
 function ApplyForm() {
   const router = useRouter();
   const searchParams = useSearchParams();
   const initialSchemeId = searchParams.get("schemeId");
-  const { t } = useLanguage();
+  const { t, language } = useLanguage();
 
   const [schemes, setSchemes] = useState<any[]>([]);
   const [selectedSchemeId, setSelectedSchemeId] = useState<string>(initialSchemeId || "");
@@ -305,12 +305,15 @@ function ApplyForm() {
                   onChange={(e) => setSelectedSchemeId(e.target.value)}
                   className="w-full rounded-xl border border-stone-300 dark:border-stone-700 bg-stone-50 dark:bg-stone-800/50 p-2.5 text-xs sm:text-sm text-stone-900 dark:text-white outline-hidden focus:border-orange-500"
                 >
-                  <option value="">-- Choose Ministry Scheme --</option>
-                  {schemes.map((s) => (
-                    <option key={s.id} value={s.id}>
-                      {s.title} ({s.category}) — ₹{s.scholarshipAmount?.toLocaleString()}/yr
-                    </option>
-                  ))}
+                  <option value="">-- {t("step1Scheme")} --</option>
+                  {schemes.map((rawScheme) => {
+                    const s = translateScheme(rawScheme, language);
+                    return (
+                      <option key={s.id} value={s.id}>
+                        {s.title} ({s.category}) — ₹{s.scholarshipAmount?.toLocaleString()}{t("perYear")}
+                      </option>
+                    );
+                  })}
                 </select>
               </div>
             </div>

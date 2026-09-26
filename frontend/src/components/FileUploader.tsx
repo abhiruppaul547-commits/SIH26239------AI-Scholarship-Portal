@@ -2,6 +2,7 @@
 
 import { useState, useRef } from "react";
 import { UploadCloud, CheckCircle2, File, AlertCircle, X, Sparkles } from "lucide-react";
+import { useLanguage } from "@/lib/i18n";
 
 interface FileUploaderProps {
   label: string;
@@ -14,12 +15,14 @@ interface FileUploaderProps {
 
 export default function FileUploader({
   label,
-  subLabel = "PNG, JPG, or PDF up to 10MB",
+  subLabel,
   accept = "image/png,image/jpeg,image/jpg,application/pdf",
   onFileSelect,
   onOcrTrigger,
   isProcessingOcr = false,
 }: FileUploaderProps) {
+  const { t } = useLanguage();
+  const effectiveSubLabel = subLabel || t("fileSupportedSub");
   const [selectedFile, setSelectedFile] = useState<File | null>(null);
   const [isDragOver, setIsDragOver] = useState(false);
   const inputRef = useRef<HTMLInputElement>(null);
@@ -49,7 +52,7 @@ export default function FileUploader({
         </label>
         {onOcrTrigger && (
           <span className="inline-flex items-center gap-1 text-[11px] font-semibold text-orange-600 dark:text-orange-400">
-            <Sparkles className="h-3 w-3" /> AI OCR Enabled
+            <Sparkles className="h-3 w-3" /> {t("ocrEnabledBadge")}
           </span>
         )}
       </div>
@@ -93,7 +96,7 @@ export default function FileUploader({
                   {selectedFile.name}
                 </div>
                 <div className="text-[11px] text-stone-500">
-                  {(selectedFile.size / (1024 * 1024)).toFixed(2)} MB • Ready
+                  {(selectedFile.size / (1024 * 1024)).toFixed(2)} MB • {t("readyBadge")}
                 </div>
               </div>
             </div>
@@ -101,7 +104,7 @@ export default function FileUploader({
             <div className="flex items-center gap-2">
               {isProcessingOcr && (
                 <div className="flex items-center gap-1.5 text-xs text-orange-600 font-semibold animate-pulse">
-                  <Sparkles className="h-4 w-4" /> Extracting...
+                  <Sparkles className="h-4 w-4" /> {t("extractingBadge")}
                 </div>
               )}
               <button
@@ -119,9 +122,9 @@ export default function FileUploader({
               <UploadCloud className="h-5 w-5" />
             </div>
             <div className="text-xs font-semibold text-stone-700 dark:text-stone-300">
-              Click to upload or drag & drop certificate
+              {t("clickToUpload")}
             </div>
-            <p className="text-[11px] text-stone-500">{subLabel}</p>
+            <p className="text-[11px] text-stone-500">{effectiveSubLabel}</p>
           </div>
         )}
       </div>

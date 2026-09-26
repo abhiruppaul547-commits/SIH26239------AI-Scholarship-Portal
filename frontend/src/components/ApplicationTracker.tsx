@@ -1,6 +1,7 @@
 "use client";
 
 import { CheckCircle2, Clock, FileCheck, XCircle, AlertCircle } from "lucide-react";
+import { useLanguage, translateStatus } from "@/lib/i18n";
 
 interface ApplicationTrackerProps {
   status: "DRAFT" | "SUBMITTED" | "UNDER_REVIEW" | "VERIFIED" | "APPROVED" | "REJECTED";
@@ -15,26 +16,28 @@ export default function ApplicationTracker({
   remarks,
   appliedDate,
 }: ApplicationTrackerProps) {
+  const { t, language } = useLanguage();
+
   const steps = [
     {
       id: "SUBMITTED",
-      label: "Application Submitted",
-      description: appliedDate ? `Logged on ${new Date(appliedDate).toLocaleDateString()}` : "Form received in portal",
+      label: t("stepSubmittedLabel"),
+      description: appliedDate ? `${t("stepSubmittedDesc")} (${new Date(appliedDate).toLocaleDateString()})` : t("stepSubmittedDesc"),
     },
     {
       id: "VERIFIED",
-      label: "AI OCR Verification",
-      description: ocrVerified ? "Caste & Income Certificates Verified" : "Awaiting OCR scan",
+      label: t("stepVerifiedLabel"),
+      description: ocrVerified ? t("stepVerifiedDesc") : "Awaiting OCR scan",
     },
     {
       id: "UNDER_REVIEW",
-      label: "Institutional Scrutiny",
-      description: "Tribal Welfare Officer review",
+      label: t("stepUnderReviewLabel"),
+      description: t("stepUnderReviewDesc"),
     },
     {
       id: "APPROVED",
-      label: "Approval & DBT Sanction",
-      description: "Direct Benefit Transfer to bank",
+      label: t("stepApprovedLabel"),
+      description: t("stepApprovedDesc"),
     },
   ];
 
@@ -58,9 +61,9 @@ export default function ApplicationTracker({
         <div>
           <h4 className="text-sm font-bold text-stone-900 dark:text-white flex items-center gap-2">
             <FileCheck className="h-4 w-4 text-orange-600" />
-            Live Application Status Tracker
+            {t("trackerTitle")}
           </h4>
-          <p className="text-xs text-stone-500 mt-0.5">Automated end-to-end pipeline tracking</p>
+          <p className="text-xs text-stone-500 mt-0.5">{t("trackerSub")}</p>
         </div>
 
         <span
@@ -77,7 +80,7 @@ export default function ApplicationTracker({
           {status === "APPROVED" && <CheckCircle2 className="h-3.5 w-3.5" />}
           {status === "REJECTED" && <XCircle className="h-3.5 w-3.5" />}
           {(status === "SUBMITTED" || status === "UNDER_REVIEW") && <Clock className="h-3.5 w-3.5 animate-spin" />}
-          {status}
+          {translateStatus(status, language)}
         </span>
       </div>
 
@@ -141,7 +144,7 @@ export default function ApplicationTracker({
         <div className="mt-4 p-3 rounded-xl bg-orange-50 dark:bg-stone-800/60 border border-orange-200/60 dark:border-stone-700 text-xs text-stone-700 dark:text-stone-300 flex items-start gap-2">
           <AlertCircle className="h-4 w-4 text-orange-600 shrink-0 mt-0.5" />
           <div>
-            <span className="font-semibold text-stone-900 dark:text-white">Officer Remarks: </span>
+            <span className="font-semibold text-stone-900 dark:text-white">{t("officerRemarksLabel")} </span>
             {remarks}
           </div>
         </div>

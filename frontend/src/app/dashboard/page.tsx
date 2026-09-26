@@ -15,13 +15,13 @@ import {
 } from "lucide-react";
 import { authApi, applicationApi, scholarshipApi } from "@/lib/api";
 import ApplicationTracker from "@/components/ApplicationTracker";
-import { useLanguage } from "@/lib/i18n";
+import { useLanguage, translateScheme, translateStatus } from "@/lib/i18n";
 
 export default function StudentDashboard() {
   const [profile, setProfile] = useState<any>(null);
   const [applications, setApplications] = useState<any[]>([]);
   const [recommendations, setRecommendations] = useState<any[]>([]);
-  const { t } = useLanguage();
+  const { t, language } = useLanguage();
 
   useEffect(() => {
     loadDashboardData();
@@ -190,7 +190,9 @@ export default function StudentDashboard() {
         </div>
 
         <div className="grid grid-cols-1 md:grid-cols-3 gap-6">
-          {recommendations.map((rec, idx) => (
+          {recommendations.map((rawRec, idx) => {
+            const rec = translateScheme(rawRec, language);
+            return (
             <div
               key={idx}
               className="rounded-3xl border border-orange-200/80 dark:border-stone-800 bg-gradient-to-b from-orange-50/40 via-white to-white dark:from-stone-900 dark:to-stone-900 p-6 shadow-xs flex flex-col justify-between space-y-4 hover:border-orange-400 transition-colors"
@@ -198,7 +200,7 @@ export default function StudentDashboard() {
               <div className="space-y-3">
                 <div className="flex items-center justify-between">
                   <span className="inline-flex items-center gap-1 rounded-full bg-emerald-100 text-emerald-800 dark:bg-emerald-950 dark:text-emerald-300 px-2.5 py-0.5 text-xs font-bold">
-                    <Percent className="h-3 w-3" /> {rec.matchScore}% {t("matchLabel")}
+                    <Sparkles className="h-3 w-3" /> {rec.matchScore}% {t("matchLabel")}
                   </span>
                   <span className="text-xs font-bold text-orange-600">
                     ₹{rec.scholarshipAmount?.toLocaleString()} {t("perYear")}
@@ -221,7 +223,8 @@ export default function StudentDashboard() {
                 {t("navApply")} <ArrowRight className="h-3.5 w-3.5" />
               </Link>
             </div>
-          ))}
+            );
+          })}
         </div>
       </div>
 
@@ -248,12 +251,14 @@ export default function StudentDashboard() {
               href="/apply"
               className="inline-block rounded-xl bg-orange-600 text-white text-xs font-bold px-4 py-2 hover:bg-orange-500"
             >
-              Start Application
+              {t("navApply")}
             </Link>
           </div>
         ) : (
           <div className="space-y-6">
-            {applications.map((app) => (
+            {applications.map((rawApp) => {
+              const app = translateScheme(rawApp, language);
+              return (
               <div
                 key={app.id}
                 className="rounded-3xl border border-stone-200/80 dark:border-stone-800 bg-white dark:bg-stone-900 p-6 shadow-xs space-y-6"
@@ -264,7 +269,7 @@ export default function StudentDashboard() {
                       {t("appId")}: {app.applicationNumber}
                     </div>
                     <h3 className="text-base font-bold text-stone-900 dark:text-white mt-0.5">
-                      {app.scholarshipTitle}
+                      {app.scholarshipTitle || app.title}
                     </h3>
                   </div>
 
@@ -285,7 +290,8 @@ export default function StudentDashboard() {
                   appliedDate={app.appliedAt}
                 />
               </div>
-            ))}
+              );
+            })}
           </div>
         )}
       </div>

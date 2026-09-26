@@ -400,7 +400,7 @@ export default function ChatbotWidget() {
                 </div>
                 <p className="text-[11px] text-orange-100 flex items-center gap-1 font-medium">
                   <span className="h-2 w-2 rounded-full bg-emerald-400 inline-block animate-pulse"></span>
-                  {t("chatActive")} • STT & TTS Ready
+                  {t("chatActive")} • {t("chatSttTtsReady")}
                 </p>
               </div>
             </div>
@@ -468,12 +468,12 @@ export default function ChatbotWidget() {
                         {speakingMessageId === m.id ? (
                           <>
                             <VolumeX className="h-3.5 w-3.5 text-orange-600 animate-pulse" />
-                            <span>Speaking...</span>
+                            <span>{t("chatBtnSpeaking")}</span>
                           </>
                         ) : (
                           <>
                             <Volume2 className="h-3.5 w-3.5" />
-                            <span>Listen</span>
+                            <span>{t("chatBtnListen")}</span>
                           </>
                         )}
                       </button>
@@ -502,7 +502,7 @@ export default function ChatbotWidget() {
                 <div className="flex h-6 w-6 items-center justify-center rounded-full bg-orange-100 text-orange-600 dark:bg-orange-950/80">
                   <Bot className="h-3.5 w-3.5 animate-bounce" />
                 </div>
-                <span className="italic font-medium">Gemini LLM is consulting tribal welfare policies...</span>
+                <span className="italic font-medium">{t("chatThinkingStatus")}</span>
               </div>
             )}
             <div ref={messagesEndRef} />
@@ -531,7 +531,7 @@ export default function ChatbotWidget() {
             {isListening && (
               <div className="flex items-center gap-2 mb-2 px-2 py-1 rounded-lg bg-red-50 dark:bg-red-950/40 border border-red-200 dark:border-red-800/50 text-red-600 dark:text-red-400 text-xs animate-pulse">
                 <span className="h-2 w-2 rounded-full bg-red-600 inline-block animate-ping"></span>
-                <span>Listening to your speech... Speak now ({language.toUpperCase()})</span>
+                <span>{t("chatListeningStatus")} ({language.toUpperCase()})</span>
               </div>
             )}
 
@@ -546,7 +546,7 @@ export default function ChatbotWidget() {
                 type="text"
                 value={inputMessage}
                 onChange={(e) => setInputMessage(e.target.value)}
-                placeholder={isListening ? "Listening to voice input..." : t("chatPlaceholder")}
+                placeholder={isListening ? "..." : t("chatPlaceholder")}
                 className="flex-1 rounded-xl border border-stone-300 dark:border-stone-700 bg-stone-50 dark:bg-stone-800/50 px-3.5 py-2 text-xs sm:text-sm text-stone-900 dark:text-stone-100 placeholder-stone-400 outline-hidden focus:border-orange-500 focus:ring-1 focus:ring-orange-500 transition-all"
               />
 
@@ -559,7 +559,7 @@ export default function ChatbotWidget() {
                     ? "bg-red-600 text-white animate-pulse shadow-md shadow-red-500/30"
                     : "bg-stone-100 dark:bg-stone-800 text-stone-600 dark:text-stone-300 hover:bg-orange-50 hover:text-orange-600 dark:hover:bg-stone-700"
                 }`}
-                title={isListening ? "Stop listening" : "Click to speak (Speech-to-Text)"}
+                title={isListening ? "Stop listening" : t("chatMicTitle")}
               >
                 {isListening ? <MicOff className="h-4 w-4" /> : <Mic className="h-4 w-4" />}
               </button>
