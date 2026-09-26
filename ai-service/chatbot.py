@@ -1,7 +1,12 @@
+import os
 import re
 from typing import List, Optional
 from fastapi import APIRouter
 from pydantic import BaseModel
+from dotenv import load_dotenv
+
+# Load environment variables
+load_dotenv()
 
 router = APIRouter(prefix="/api/ai", tags=["Vernacular Chatbot Assistant"])
 
@@ -17,7 +22,67 @@ class ChatResponse(BaseModel):
     intent: str
     suggestions: List[str]
 
-# Intent dictionary with multi-lingual patterns (English, Hindi, Santhali, Bengali, Assamese)
+# Gemini Client Initialization
+gemini_client = None
+api_key = os.getenv("GEMINI_API_KEY", "")
+
+try:
+    if api_key:
+        from google import genai
+        gemini_client = genai.Client(api_key=api_key)
+        print("Gemini Client initialized successfully for Chatbot Assistant.")
+    else:
+        print("Notice: GEMINI_API_KEY not set in environment. Falling back to local vernacular NLP engine.")
+except Exception as init_err:
+    print(f"Warning: Could not initialize Gemini Client: {init_err}")
+    gemini_client = None
+
+# Scheme knowledge and guidelines system instruction
+SYSTEM_INSTRUCTION = """
+You are the official AI Vernacular Scholarship Advisor for the Ministry of Tribal Affairs (SIH26239 - AI-Enabled Scholarship Management System for Tribal Students).
+Your mission is to provide accurate, authoritative, empathetic, and culturally respectful guidance to Scheduled Tribe (ST) students, parents, and institutions across India.
+
+KEY SCHOLARSHIP SCHEMES (Ministry of Tribal Affairs):
+1. Post-Matric Scholarship for ST Students:
+   - Eligibility: ST students studying from Class 11 up to Post-Graduation / Professional degrees.
+   - Income Ceiling: Family annual income <= ₹2,50,000.
+   - Benefits: 100% compulsory non-refundable fees covered + Monthly maintenance allowance + Thesis typing & book grants.
+2. National Fellowship and Scholarship for Higher Education of ST Students:
+   - Eligibility: ST students pursuing regular full-time M.Phil and Ph.D. degrees, and meritorious ST students admitted to top-tier notified institutes.
+   - Income Ceiling: <= ₹6,00,000 per annum for scholarship component; fellowship is merit-based.
+   - Benefits: Full tuition fees + monthly fellowship stipend.
+3. Top Class Education for ST Students in Premier Institutes:
+   - Eligibility: ST students admitted to notified premier institutes (e.g., IITs, NITs, IIMs, AIIMS, NLUs, NIDs, IIITs).
+   - Income Ceiling: Family annual income <= ₹6,00,000.
+   - Benefits: Full tuition fee reimbursement + Living expenses of ₹3,000/month (₹36,000/yr) + Book/stationery grant ₹5,000/yr + One-time Computer/Laptop grant up to ₹45,000.
+4. Pre-Matric Scholarship for ST Students:
+   - Eligibility: ST students in Class 9 and 10 in recognized schools.
+   - Income Ceiling: Family annual income <= ₹2,00,000.
+   - Benefits: Day scholars ₹2,250/yr, Hostellers ₹5,250/yr + disability allowance.
+5. National Overseas Scholarship for ST Students:
+   - Eligibility: ST students pursuing Masters, Ph.D., and Post-Doctoral studies in top 500 QS-ranked foreign universities.
+
+PORTAL INNOVATIVE FEATURES (SIH26239):
+- AI Document OCR Auto-Fill: Using OpenCV image processing and OCR, students can simply upload photos/PDFs of their Caste and Income Certificates. The system automatically reads and populates their Name, Tribe, Certificate Number, and Annual Income directly into the application form.
+- AI Fraud & Tampering Detection: Cross-verifies certificate layout, seal consistency, and revenue authority signatures to eliminate fake claims.
+- Direct Benefit Transfer (DBT): Integrated with Aadhaar Payment Bridge (APB) for direct, transparent fund transfer into the student's Aadhaar-seeded bank account.
+- 4-Tier Verification Workflow: Student Submission -> AI OCR Pre-Screening -> College/Institute Verification -> State Welfare Nodal Officer Scrutiny -> PFMS / DBT Disbursement.
+
+LINGUISTIC & TONE RULES:
+- Greetings: Begin with culturally respectful greetings: "Johar! / नमस्ते / ᱡᱚᱦᱟᱨ / নমস্কার / জোহাৰ".
+- Language Adaptability: Always reply in the requested or detected language:
+  * English: Clear, professional, motivating, structured.
+  * Hindi (हिन्दी): Respectful, accurate, fluent Devnagari.
+  * Santhali (ᱥᱟᱱᱛᱟᱲᱤ): Use Ol Chiki or respectful Santhali transliteration with traditional "Johar".
+  * Bengali (বাংলা): Formal, polite, helpful.
+  * Assamese (অসমীয়া): Polite, clear, accurate.
+- Formatting: Use short paragraphs, clear bold headers, and bullet points so it is easy to read on mobile devices.
+- Closing Suggestions: AT THE VERY END of your response, output exactly one line in this format:
+  SUGGESTIONS: <Brief Followup Query 1> | <Brief Followup Query 2> | <Brief Followup Query 3>
+  (Make sure the suggestions match the language of the conversation).
+"""
+
+# Local Fallback Intent Knowledge Base
 INTENTS = [
     {
         "intent": "GREETING",
@@ -64,7 +129,7 @@ INTENTS = [
     {
         "intent": "INCOME_LIMIT",
         "patterns": [
-            r"(income\s*limit|income\s*criteria|max\s*income|ceiling|kamai|aay\s*sima|aaye|b वार्षिक আয়)",
+            r"(income\s*limit|income\s*criteria|max\s*income|ceiling|kamai|aay\s*sima|aaye|b वार्षिक आय)",
             r"(आय सीमा|पारिवारिक आय|কত আয়|আয়ের সীমা|আয়ৰ সীমা|বাৰ্ষিক আয়)"
         ],
         "replies": {
@@ -86,7 +151,7 @@ INTENTS = [
         "intent": "OCR_AUTOFIL",
         "patterns": [
             r"(ocr|auto[\-\s]?fill|scan|extract|upload\s*document|image)",
-            r"(ऑटो फिल|स्कैन|अपलोड|দস্তাवेज स्कैन|অটো-ফিল|স্ক্যান|আপলোড)"
+            r"(ऑटो फिल|स्कैन|अपलोड|दस्तावेज स्कैन|অটো-ফিল|স্ক্যান|আপলোড)"
         ],
         "replies": {
             "en": "Our AI system uses OpenCV and Tesseract OCR to read your Caste and Income certificates directly. Simply click 'Auto-Fill from Document' on the Apply page, choose your certificate photo/PDF, and your Name, Tribe, Category, Certificate Number, and Income will be filled instantly!",
@@ -140,7 +205,6 @@ def detect_language(text: str, fallback_lang: str = "en") -> str:
     """Detect if input text contains Devanagari, Bengali/Assamese, or Ol Chiki characters."""
     # Bengali / Assamese unicode range
     if re.search(r"[\u0980-\u09FF]", text):
-        # Distinguish Assamese specific letter ৰ (09F0) or ৱ (09F1)
         if "ৰ" in text or "ৱ" in text or any(w in text.lower() for w in ["কৰক", "লাহক", "আঁচনি"]):
             return "as"
         return "bn"
@@ -162,17 +226,89 @@ def detect_language(text: str, fallback_lang: str = "en") -> str:
         return "as"
     return normalize_lang_code(fallback_lang)
 
+def parse_suggestions_from_text(text: str, default_sugs: List[str]) -> tuple[str, List[str]]:
+    """Extract suggestions line if generated by the LLM."""
+    lines = text.strip().split("\n")
+    cleaned_lines = []
+    suggestions = []
+
+    for line in lines:
+        if line.strip().startswith("SUGGESTIONS:"):
+            raw_sug = line.replace("SUGGESTIONS:", "").strip()
+            parts = [s.strip() for s in raw_sug.split("|") if s.strip()]
+            if parts:
+                suggestions = parts
+        else:
+            cleaned_lines.append(line)
+
+    cleaned_text = "\n".join(cleaned_lines).strip()
+    if not suggestions:
+        suggestions = default_sugs
+    return cleaned_text, suggestions[:4]
+
 @router.post("/chat", response_model=ChatResponse)
-async def chat_vernacular(req: ChatRequest):
+def chat_vernacular(req: ChatRequest):
     """
-    Multilingual vernacular assistant responding in English, Hindi, Santhali, Bengali, and Assamese.
+    Production-grade LLM-powered Vernacular Chatbot Assistant backed by Google Gemini
+    with graceful fallback to multi-lingual rule-based NLP engine.
     """
     lang = detect_language(req.message, req.language or "en")
-    user_msg = req.message.lower().strip()
+    user_msg = req.message.strip()
 
+    # Default localized suggestions
+    default_sug_map = {
+        "en": ["What documents do I need to apply?", "What is the income limit for ST scholarship?", "How does Auto-Fill OCR work?"],
+        "hi": ["आवेदन के लिए कौन से दस्तावेज़ चाहिए?", "ST छात्रवृत्ति की आय सीमा क्या है?", "Auto-Fill OCR कैसे काम करता है?"],
+        "sat": ["ᱪᱮᱫ ᱠᱟᱜᱚᱡᱽ ᱞᱟᱜᱟᱜ-ᱟ?", "ST ᱞᱟᱹᱜᱤᱫ ᱥᱮᱨᱢᱟ ᱟᱭ?", "Auto-Fill OCR ᱪᱮᱫ ᱞᱮᱠᱟ ᱠᱟᱹᱢᱤᱭᱟ?"],
+        "bn": ["আবেদন করতে কি নথিপত্র লাগবে?", "ST বৃত্তির আয় সীমা কত?", "Auto-Fill OCR কীভাবে কাজ করে?"],
+        "as": ["আবেদনৰ বাবে কি কি নথিপত্ৰ লাগিব?", "ST বৃত্তিৰ বাবে সৰ্বাধিক আয় কিমান?", "Auto-Fill OCR কেনেকৈ হয়?"]
+    }
+    current_defaults = default_sug_map.get(lang, default_sug_map["en"])
+
+    # 1. Attempt Production LLM Generation via Google Gemini Model Cascade
+    if gemini_client is not None:
+        language_instructions = {
+            "hi": "Respond in clear, respectful, natural Hindi (Devanagari script).",
+            "bn": "Respond in clear, polite, natural Bengali (বাংলা).",
+            "as": "Respond in clear, polite, natural Assamese (অসমীয়া).",
+            "sat": "Respond in Santhali (Santali) with traditional Johar (Ol Chiki or Latin script).",
+            "en": "Respond in clear, professional English."
+        }
+        lang_directive = language_instructions.get(lang, "Respond in clear English.")
+
+        prompt_input = f"""Language Requirement: {lang_directive}
+User Message: {user_msg}
+"""
+
+        candidate_models = ["gemini-3.5-flash-lite", "gemini-3.8-flash"]
+        for model_name in candidate_models:
+            try:
+                interaction = gemini_client.interactions.create(
+                    model=model_name,
+                    system_instruction=SYSTEM_INSTRUCTION,
+                    input=prompt_input,
+                    store=False
+                )
+
+                raw_reply = interaction.output_text
+                if raw_reply and len(raw_reply.strip()) > 0:
+                    clean_reply, extracted_sug = parse_suggestions_from_text(raw_reply, current_defaults)
+                    return ChatResponse(
+                        success=True,
+                        reply=clean_reply,
+                        language=lang,
+                        intent=f"LLM_{model_name.upper().replace('-', '_')}",
+                        suggestions=extracted_sug
+                    )
+            except Exception as model_err:
+                print(f"Model {model_name} note: {model_err}")
+                continue
+
+    # 2. Local Intent Matcher (Instant, Offline & Resilient Fallback)
+    user_lower = user_msg.lower()
     for item in INTENTS:
         for pattern in item["patterns"]:
-            if re.search(pattern, user_msg, re.IGNORECASE):
+            if re.search(pattern, user_lower, re.IGNORECASE):
                 reply_text = item["replies"].get(lang, item["replies"]["en"])
                 sug_list = item["suggestions"].get(lang, item["suggestions"]["en"])
                 return ChatResponse(
@@ -183,27 +319,19 @@ async def chat_vernacular(req: ChatRequest):
                     suggestions=sug_list
                 )
 
-    # General Fallbacks
+    # 3. Comprehensive Local General Fallback
     fallback_replies = {
-        "en": "Johar! I can guide you on Tribal Scholarship schemes, required documents (Caste/Income certificates), income limits, and how our OCR Auto-Fill works. Feel free to ask!",
-        "hi": "जोहार! मैं आपको जनजातीय छात्रवृत्ति योजनाओं, आवश्यक प्रमाण पत्रों, आय सीमा, और AI दस्तावेज़ सत्यापन के बारे में जानकारी दे सकता हूँ। आप कुछ भी पूछ सकते हैं!",
-        "sat": "ᱡᱚᱦᱟᱨ! ᱤᱧ ᱟᱹᱫᱤᱵᱟᱹᱥᱤ ᱥᱠᱚᱞᱟᱨᱥᱤᱯ ᱡᱚᱡᱚᱱᱟ, ᱡᱟᱹᱛᱤ/ᱟᱭ ᱥᱟᱠᱟᱢ, ᱟᱨ Auto-Fill OCR ᱵᱟᱵᱚᱛ ᱞᱟᱹᱭ ᱫᱟᱲᱮᱭᱟᱢᱟ।",
-        "bn": "জোহার! আমি আপনাকে উপজাতি স্কলারশিপ প্রকল্প, প্রয়োজনীয় নথিপত্র (জাতি/আয় সার্টিফিকেট) এবং AI অটো-ফিল সংক্রান্ত তথ্য দিতে পারি। নির্দ্বিধায় জিজ্ঞাসা করুন!",
-        "as": "জোহাৰ! মই আপোনাক জনজাতীয় বৃত্তি আঁচনি, প্ৰয়োজনীয় নথিপত্ৰ (জাতি/আয়ৰ চার্টিফিকেট) আৰু AI অটো-ফিল সম্পৰ্কে সহায় কৰিব পাৰোঁ। আপুনি যিকোনো প্ৰশ্ন সুধিব পাৰে!"
-    }
-
-    fallback_sug = {
-        "en": ["What documents do I need?", "What is the income limit for ST?", "How does Auto-Fill OCR work?"],
-        "hi": ["कौन से दस्तावेज़ चाहिए?", "ST छात्रवृत्ति की आय सीमा क्या है?", "Auto-Fill OCR कैसे काम करता है?"],
-        "sat": ["ᱪᱮᱫ ᱠᱟᱜᱚᱡᱽ ᱞᱟᱜᱟᱜ-ᱟ?", "ST ᱞᱟᱹᱜᱤᱫ ᱥᱮᱨᱢᱟ ᱟᱭ?", "Auto-Fill OCR ᱪᱮᱫ ᱞᱮᱠᱟ ᱠᱟᱹᱢᱤᱭᱟ?"],
-        "bn": ["কি কি নথিপত্র প্রয়োজন?", "ST বৃত্তির আয় সীমা কত?", "Auto-Fill OCR কীভাবে কাজ করে?"],
-        "as": ["কি কি নথিপত্ৰ লাগিব?", "ST বৃত্তিৰ বাবে সৰ্বাধিক আয় কিমান?", "Auto-Fill OCR কেনেকৈ হয়?"]
+        "en": "Johar! I am your AI Tribal Scholarship Advisor. I can assist you with government schemes (Post-Matric, Higher Education, Top Class), required certificates (ST Caste & Income certificates), annual income limits, and how our OpenCV AI Auto-Fill works. What would you like to know?",
+        "hi": "जोहार! मैं आपका AI जनजातीय छात्रवृत्ति सलाहकार हूँ। मैं आपको सरकारी योजनाओं (पोस्ट-मैट्रिक, उच्च शिक्षा, टॉप क्लास), आवश्यक प्रमाण पत्रों (ST जाति एवं आय प्रमाण पत्र), आय सीमा, और OpenCV AI ऑटो-फिल के बारे में विस्तार से बता सकता हूँ। आप क्या जानना चाहते हैं?",
+        "sat": "ᱡᱚᱦᱟᱨ! ᱤᱧ ᱟᱹᱫᱤᱵᱟᱹᱥᱤ ᱥᱠᱚᱞᱟᱨᱥᱤᱯ ᱡᱚᱡᱚᱱᱟ, ᱡᱟᱹᱛᱤ ᱟᱨ ᱟᱭ ᱥᱟᱠᱟᱢ, ᱟᱨ Auto-Fill OCR ᱵᱟᱵᱚᱛ ᱜᱚᱲᱚᱭᱤᱡ AI ᱠᱟᱱᱟᱹᱧ। ᱪᱮᱫ ᱵᱟᱰᱟᱭ ᱥᱟᱱᱟᱢᱮᱫ ᱢᱮᱭᱟ?",
+        "bn": "জোহার! আমি উপজাতি শিক্ষার্থীদের জন্য AI বৃত্তি পরামর্শক। পোস্ট-ম্যাট্রিক স্কলারশিপ, ন্যাশনাল ফেলোশিপ, প্রয়োজনীয় সার্টিফিকেট (জাতি ও আয় শংসাপত্র), আয়ের সীমা এবং OpenCV AI অটো-ফিল সংক্রান্ত যেকোনো তথ্য আমি দিতে পারি।",
+        "as": "জোহাৰ! মই জনজাতীয় শিক্ষাৰ্থীসকলৰ বাবে AI বৃত্তি পৰামৰ্শদাতা। প'ষ্ট-মেট্ৰিক বৃত্তি, উচ্চ শিক্ষা, প্ৰয়োজনীয় চার্টিফিকেট (জাতি আৰু আয়ৰ চার্টিফিকেট), আয়ৰ সীমা আৰু AI অটো-ফিল সম্পৰ্কে আপুনি সোধিব পাৰে।"
     }
 
     return ChatResponse(
         success=True,
         reply=fallback_replies.get(lang, fallback_replies["en"]),
         language=lang,
-        intent="GENERAL_HELP",
-        suggestions=fallback_sug.get(lang, fallback_sug["en"])
+        intent="GENERAL_ADVISORY",
+        suggestions=current_defaults
     )

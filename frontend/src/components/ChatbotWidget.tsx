@@ -1,7 +1,18 @@
 "use client";
 
-import { useState, useRef, useEffect } from "react";
-import { X, Send, Bot, User, Sparkles, HelpCircle } from "lucide-react";
+import { useState, useRef, useEffect, useCallback } from "react";
+import {
+  X,
+  Send,
+  Bot,
+  User,
+  Sparkles,
+  HelpCircle,
+  Mic,
+  MicOff,
+  Volume2,
+  VolumeX,
+} from "lucide-react";
 import { aiApi } from "@/lib/api";
 import { useLanguage, SUPPORTED_LANGUAGES, Language } from "@/lib/i18n";
 
@@ -14,49 +25,139 @@ interface Message {
 
 const NATIVE_SUGGESTIONS: Record<Language, string[]> = {
   en: [
-    "What documents do I need to apply?",
-    "What is the income limit for ST scholarship?",
-    "How does the Auto-Fill OCR work?",
-    "How do I track my application?",
+    "What scholarships are there for ST students at NITs?",
+    "What is the income limit for ST Post-Matric?",
+    "How does the AI Auto-Fill OCR work?",
+    "What documents do I need to upload?",
   ],
   hi: [
-    "आवेदन के लिए कौन से दस्तावेज़ चाहिए?",
-    "ST छात्रवृत्ति के लिए आय सीमा क्या है?",
-    "दस्तावेज़ से Auto-Fill कैसे काम करता है?",
-    "आवेदन की स्थिति कैसे जांचें?",
+    "NIT/IIT में ST छात्रों के लिए कौन सी छात्रवृत्ति है?",
+    "पोस्ट-मैट्रिक छात्रवृत्ति की आय सीमा क्या है?",
+    "AI दस्तावेज़ Auto-Fill कैसे काम करता है?",
+    "आवेदन के लिए कौन से दस्तावेज़ अपलोड करने होंगे?",
   ],
   sat: [
-    "ᱪᱮᱫ ᱠᱟᱜᱚᱡᱽ ᱠᱚ ᱞᱟᱜᱟᱜ-ᱟ?",
-    "ST ᱞᱟᱹᱜᱤᱫ ᱥᱮᱨᱢᱟ ᱟᱭ ᱛᱤᱱᱟᱹᱜ ᱞᱟᱹᱠᱛᱤ?",
-    "Auto-Fill OCR ᱪᱮᱫ ᱞᱮᱠᱟ ᱠᱟᱹᱢᱤᱭᱟ?",
-    "ᱤᱧᱟᱜ ᱫᱚᱨᱠᱷᱟᱥᱛ ᱦᱟᱞᱚᱛ ᱪᱮᱠ ᱢᱮ",
+    "NIT/IIT ᱨᱮ ST ᱯᱟᱹᱴᱷᱩᱣᱟᱹ ᱞᱟᱹᱜᱤᱫ ᱪᱮᱫ ᱥᱠᱚᱞᱟᱨᱥᱤᱯ ᱢᱮᱱᱟᱜ-ᱟ?",
+    "Post-Matric ᱞᱟᱹᱜᱤᱫ ᱥᱮᱨᱢᱟ ᱟᱭ ᱛᱤᱱᱟᱹᱜ ᱞᱟᱹᱠᱛᱤ?",
+    "AI Auto-Fill OCR ᱪᱮᱫ ᱞᱮᱠᱟ ᱠᱟᱹᱢᱤᱭᱟ?",
+    "ᱪᱮᱫ ᱠᱟᱜᱚᱡᱽ ᱠᱚ ᱞᱟᱫᱮ ᱦᱩᱭᱩᱜ-ᱟ?",
   ],
   bn: [
-    "আবেদন করতে কি কি কাগজপত্র লাগবে?",
-    "ST বৃত্তির পারিবারিক আয়ের সর্বোচ্চ সীমা কত?",
-    "ডকুমেন্ট থেকে Auto-Fill কীভাবে কাজ করে?",
-    "আবেদনের স্ট্যাটাস কীভাবে চেক করব?",
+    "NIT/IIT-তে ST শিক্ষার্থীদের জন্য কোন স্কলারশিপ রয়েছে?",
+    "পোস্ট-ম্যাট্রিক বৃত্তির পারিবারিক আয়ের সর্বোচ্চ সীমা কত?",
+    "AI অটো-ফিল OCR কীভাবে কাজ করে?",
+    "কি কি নথিপত্র আপলোড করতে হবে?",
   ],
   as: [
-    "আবেদন কৰিবলৈ কি কি নথিপত্ৰ লাগিব?",
-    "ST বৃত্তিৰ বাবে সৰ্বাধিক আয়ৰ সীমা কিমান?",
-    "নথিপত্ৰৰ পৰা Auto-Fill কেনেকৈ হয়?",
-    "আবেদনৰ স্থিতি কেনেকৈ পৰীক্ষা কৰিম?",
+    "NIT/IIT-ত ST শিক্ষাৰ্থীৰ বাবে কি কি বৃত্তি আছে?",
+    "প'ষ্ট-মেট্ৰিক বৃত্তিৰ বাবে সৰ্বাধিক বাৰ্ষিক আয় কিমান?",
+    "AI অটো-ফিল OCR কেনেকৈ কাম কৰে?",
+    "কি কি নথিপত্ৰ আপল'ড কৰিব লাগিব?",
   ],
 };
 
 const WELCOME_MESSAGES: Record<Language, string> = {
-  en: "Johar! 🙏 I am your AI Scholarship Assistant for tribal students. How can I assist you with schemes, documents, or OCR verification today?",
-  hi: "जोहार! 🙏 मैं जनजातीय छात्रों के लिए आपका AI छात्रवृत्ति सहायक हूँ। योजनाओं, प्रमाणपत्रों या AI सत्यापन में मैं आपकी क्या मदद करूँ?",
-  sat: "ᱡᱚᱦᱟᱨ! 🙏 ᱤᱧ ᱟᱹᱫᱤᱵᱟᱹᱥᱤ ᱯᱟᱹᱴᱷᱩᱣᱟᱹ ᱠᱚ ᱞᱟᱹᱜᱤᱫ AI ᱥᱠᱚᱞᱟᱨᱥᱤᱯ ᱜᱚᱲᱚᱭᱤᱡ। ᱪᱮᱫ ᱜᱚᱲᱚ ᱞᱟᱹᱠᱛᱤ ᱠᱟᱱᱟ?",
-  bn: "জোহার! 🙏 আমি উপজাতি শিক্ষার্থীদের জন্য আপনার AI বৃত্তি সহায়ক। স্কলারশিপ, নথিপত্র বা অটো-ফিল সংক্রান্ত কী জানতে চান?",
-  as: "জোহাৰ! 🙏 মই জনজাতীয় শিক্ষাৰ্থীসকলৰ বাবে AI বৃত্তি সহায়ক। আঁচনি বা নথিপত্ৰ পৰীক্ষাৰ ক্ষেত্ৰত কি সহায় কৰিব পাৰোঁ?",
+  en: "Johar! 🙏 I am your production-grade AI Scholarship Advisor powered by Gemini. Ask me anything about schemes, income criteria, documents, DBT transfers, or AI auto-filling!",
+  hi: "जोहार! 🙏 मैं जनजातीय छात्रों के लिए आपका Gemini-संचालित AI छात्रवृत्ति सलाहकार हूँ। योजनाओं, आय सीमा, दस्तावेज़ों, या AI ऑटो-फिल के बारे में कुछ भी पूछें!",
+  sat: "ᱡᱚᱦᱟᱨ! 🙏 ᱤᱧ ᱟᱹᱫᱤᱵᱟᱹᱥᱤ ᱯᱟᱹᱴᱷᱩᱣᱟᱹ ᱠᱚ ᱞᱟᱹᱜᱤᱫ Gemini ᱫᱟᱨᱟᱭ ᱛᱮ ᱪᱟᱞᱟᱣᱚᱜ ᱠᱟᱱ AI ᱥᱠᱚᱞᱟᱨᱥᱤᱯ ᱜᱚᱲᱚᱭᱤᱡ। ᱥᱠᱚᱞᱟᱨᱥᱤᱯ, ᱟᱭ ᱥᱤᱢᱟᱹ ᱟᱨ OCR ᱵᱟᱵᱚᱛ ᱠᱩᱞᱤᱭᱤᱧ ᱢᱮ!",
+  bn: "জোহার ও নমস্কার! 🙏 আমি আপনার Gemini-চালিত অফিসিয়াল AI বৃত্তি উপদেষ্টা। স্কলারশিপ স্কিম, আয়ের সীমা, প্রয়োজনীয় নথিপত্র ও AI ভেরিফিকেশন নিয়ে যেকোনো প্রশ্ন করুন!",
+  as: "জোহাৰ আৰু নমস্কাৰ! 🙏 মই Gemini-চালিত জনজাতীয় শিক্ষাৰ্থীৰ AI বৃত্তি পৰামৰ্শদাতা। আঁচনি, আয়ৰ যোগ্যতা, নথিপত্ৰ বা AI অটো-ফিল সম্পৰ্কে আপুনি সোধিব পাৰে!",
 };
+
+// Map portal language codes to speech synthesis BCP-47 codes
+const SPEECH_LANG_CODES: Record<Language, string> = {
+  en: "en-IN",
+  hi: "hi-IN",
+  bn: "bn-IN",
+  as: "as-IN",
+  sat: "hi-IN", // Fallback for Santhali speech recognition
+};
+
+function formatBotMessage(text: string) {
+  // Simple markdown renderer for bold, lists, and linebreaks
+  const lines = text.split("\n");
+  return lines.map((line, lIdx) => {
+    const trimmed = line.trim();
+    if (!trimmed) {
+      return <div key={lIdx} className="h-2" />;
+    }
+
+    // Check if line is a header (### Header)
+    if (trimmed.startsWith("### ")) {
+      return (
+        <h4 key={lIdx} className="font-bold text-amber-900 dark:text-amber-300 text-xs sm:text-sm mt-2 mb-1">
+          {trimmed.replace(/^###\s+/, "")}
+        </h4>
+      );
+    }
+    if (trimmed.startsWith("## ")) {
+      return (
+        <h3 key={lIdx} className="font-bold text-amber-900 dark:text-amber-200 text-sm mt-2 mb-1">
+          {trimmed.replace(/^##\s+/, "")}
+        </h3>
+      );
+    }
+
+    // Check if line is a bullet item (* or -)
+    const isBullet = /^[*-]\s+/.test(trimmed);
+    const isNumbered = /^\d+\.\s+/.test(trimmed);
+    const content = trimmed.replace(/^[*-]\s+/, "").replace(/^\d+\.\s+/, "");
+
+    // Parse **bold** parts
+    const parts = content.split(/(\*\*.*?\*\*)/g);
+    const parsedContent = parts.map((part, pIdx) => {
+      if (part.startsWith("**") && part.endsWith("**")) {
+        return (
+          <strong key={pIdx} className="font-semibold text-stone-900 dark:text-white">
+            {part.slice(2, -2)}
+          </strong>
+        );
+      }
+      return part;
+    });
+
+    if (isBullet) {
+      return (
+        <div key={lIdx} className="flex items-start gap-1.5 ml-1 my-0.5">
+          <span className="text-orange-600 dark:text-orange-400 text-xs leading-5">•</span>
+          <span className="flex-1">{parsedContent}</span>
+        </div>
+      );
+    }
+
+    if (isNumbered) {
+      const match = trimmed.match(/^(\d+)\.\s+/);
+      const num = match ? match[1] : "•";
+      return (
+        <div key={lIdx} className="flex items-start gap-1.5 ml-1 my-0.5">
+          <span className="font-semibold text-orange-600 dark:text-orange-400 text-xs leading-5">{num}.</span>
+          <span className="flex-1">{parsedContent}</span>
+        </div>
+      );
+    }
+
+    return (
+      <p key={lIdx} className="my-1">
+        {parsedContent}
+      </p>
+    );
+  });
+}
+
+function stripMarkdown(text: string): string {
+  return text
+    .replace(/[*#_~`>]/g, "")
+    .replace(/\[([^\]]+)\]\([^)]+\)/g, "$1")
+    .replace(/\n+/g, " ")
+    .trim();
+}
 
 export default function ChatbotWidget() {
   const [isOpen, setIsOpen] = useState(false);
   const [inputMessage, setInputMessage] = useState("");
   const [isLoading, setIsLoading] = useState(false);
+  const [isListening, setIsListening] = useState(false);
+  const [speakingMessageId, setSpeakingMessageId] = useState<string | null>(null);
   const { language, setLanguage, t } = useLanguage();
 
   const [messages, setMessages] = useState<Message[]>([
@@ -68,7 +169,12 @@ export default function ChatbotWidget() {
     },
   ]);
 
-  const [suggestions, setSuggestions] = useState<string[]>(NATIVE_SUGGESTIONS[language] || NATIVE_SUGGESTIONS.en);
+  const [suggestions, setSuggestions] = useState<string[]>(
+    NATIVE_SUGGESTIONS[language] || NATIVE_SUGGESTIONS.en
+  );
+
+  const messagesEndRef = useRef<HTMLDivElement>(null);
+  const recognitionRef = useRef<any>(null);
 
   // Sync welcome message and suggestions when language changes
   useEffect(() => {
@@ -88,8 +194,6 @@ export default function ChatbotWidget() {
     });
   }, [language]);
 
-  const messagesEndRef = useRef<HTMLDivElement>(null);
-
   const scrollToBottom = () => {
     messagesEndRef.current?.scrollIntoView({ behavior: "smooth" });
   };
@@ -100,9 +204,29 @@ export default function ChatbotWidget() {
     }
   }, [messages, isOpen]);
 
+  // Clean up speech synthesis when component unmounts or closes
+  useEffect(() => {
+    return () => {
+      if (typeof window !== "undefined" && "speechSynthesis" in window) {
+        window.speechSynthesis.cancel();
+      }
+      if (recognitionRef.current) {
+        try {
+          recognitionRef.current.stop();
+        } catch {}
+      }
+    };
+  }, []);
+
   const handleSend = async (textToSend?: string) => {
     const query = textToSend || inputMessage;
     if (!query.trim()) return;
+
+    // Stop speaking any previous message
+    if (typeof window !== "undefined" && "speechSynthesis" in window) {
+      window.speechSynthesis.cancel();
+      setSpeakingMessageId(null);
+    }
 
     const userMsg: Message = {
       id: Date.now().toString(),
@@ -131,12 +255,113 @@ export default function ChatbotWidget() {
       const fallbackMsg: Message = {
         id: (Date.now() + 1).toString(),
         sender: "bot",
-        text: WELCOME_MESSAGES[language] || "Johar! Please check scholarship guidelines or contact district nodal officer.",
+        text: WELCOME_MESSAGES[language] || "Johar! Please check scholarship guidelines or contact the district nodal officer.",
         timestamp: new Date().toLocaleTimeString([], { hour: "2-digit", minute: "2-digit" }),
       };
       setMessages((prev) => [...prev, fallbackMsg]);
     } finally {
       setIsLoading(false);
+    }
+  };
+
+  // Text-To-Speech (TTS) Handler
+  const toggleSpeech = useCallback(
+    (msgId: string, rawText: string) => {
+      if (typeof window === "undefined" || !("speechSynthesis" in window)) {
+        alert("Text-to-speech is not supported on this browser.");
+        return;
+      }
+
+      if (speakingMessageId === msgId) {
+        window.speechSynthesis.cancel();
+        setSpeakingMessageId(null);
+        return;
+      }
+
+      window.speechSynthesis.cancel();
+      const cleanText = stripMarkdown(rawText);
+      const utterance = new SpeechSynthesisUtterance(cleanText);
+
+      const targetLang = SPEECH_LANG_CODES[language] || "en-IN";
+      utterance.lang = targetLang;
+      utterance.rate = 0.95; // slightly slower for maximum clarity
+
+      // Find an matching voice if available
+      const voices = window.speechSynthesis.getVoices();
+      const voice = voices.find(
+        (v) => v.lang.toLowerCase() === targetLang.toLowerCase() || v.lang.startsWith(targetLang.split("-")[0])
+      );
+      if (voice) {
+        utterance.voice = voice;
+      }
+
+      utterance.onend = () => {
+        setSpeakingMessageId(null);
+      };
+
+      utterance.onerror = () => {
+        setSpeakingMessageId(null);
+      };
+
+      setSpeakingMessageId(msgId);
+      window.speechSynthesis.speak(utterance);
+    },
+    [speakingMessageId, language]
+  );
+
+  // Speech-To-Text (STT) Handler
+  const toggleVoiceInput = () => {
+    if (typeof window === "undefined") return;
+
+    const SpeechRecognition =
+      (window as any).SpeechRecognition || (window as any).webkitSpeechRecognition;
+
+    if (!SpeechRecognition) {
+      alert("Speech-to-text recognition is not supported in this browser. Please use Chrome, Edge, or Safari.");
+      return;
+    }
+
+    if (isListening) {
+      if (recognitionRef.current) {
+        try {
+          recognitionRef.current.stop();
+        } catch {}
+      }
+      setIsListening(false);
+      return;
+    }
+
+    try {
+      const recognition = new SpeechRecognition();
+      recognitionRef.current = recognition;
+      recognition.lang = SPEECH_LANG_CODES[language] || "en-IN";
+      recognition.interimResults = false;
+      recognition.maxAlternatives = 1;
+
+      recognition.onstart = () => {
+        setIsListening(true);
+      };
+
+      recognition.onresult = (event: any) => {
+        const transcript = event.results[0][0].transcript;
+        if (transcript) {
+          setInputMessage((prev) => (prev ? prev + " " + transcript : transcript));
+        }
+      };
+
+      recognition.onerror = (event: any) => {
+        console.warn("Speech recognition error:", event.error);
+        setIsListening(false);
+      };
+
+      recognition.onend = () => {
+        setIsListening(false);
+      };
+
+      recognition.start();
+    } catch (err) {
+      console.error("Speech recognition could not start:", err);
+      setIsListening(false);
     }
   };
 
@@ -159,7 +384,7 @@ export default function ChatbotWidget() {
 
       {/* Chat Window */}
       {isOpen && (
-        <div className="flex flex-col h-[520px] w-[370px] sm:w-[420px] rounded-2xl bg-white dark:bg-stone-900 border border-stone-200 dark:border-stone-800 shadow-2xl overflow-hidden animate-in fade-in slide-in-from-bottom-5 duration-200">
+        <div className="flex flex-col h-[560px] w-[370px] sm:w-[440px] rounded-2xl bg-white dark:bg-stone-900 border border-stone-200 dark:border-stone-800 shadow-2xl overflow-hidden animate-in fade-in slide-in-from-bottom-5 duration-200">
           {/* Header */}
           <div className="flex items-center justify-between px-4 py-3.5 bg-gradient-to-r from-orange-600 to-amber-700 text-white">
             <div className="flex items-center gap-2.5">
@@ -167,10 +392,15 @@ export default function ChatbotWidget() {
                 <Sparkles className="h-5 w-5 text-amber-200" />
               </div>
               <div>
-                <h3 className="text-sm font-bold leading-tight">{t("chatTitle")}</h3>
+                <div className="flex items-center gap-2">
+                  <h3 className="text-sm font-bold leading-tight">{t("chatTitle")}</h3>
+                  <span className="text-[10px] uppercase tracking-wider bg-orange-800/80 px-1.5 py-0.5 rounded text-amber-200 font-semibold">
+                    Gemini 3.8
+                  </span>
+                </div>
                 <p className="text-[11px] text-orange-100 flex items-center gap-1 font-medium">
-                  <span className="h-2 w-2 rounded-full bg-emerald-400 inline-block"></span>
-                  {t("chatActive")}
+                  <span className="h-2 w-2 rounded-full bg-emerald-400 inline-block animate-pulse"></span>
+                  {t("chatActive")} • STT & TTS Ready
                 </p>
               </div>
             </div>
@@ -199,33 +429,66 @@ export default function ChatbotWidget() {
           </div>
 
           {/* Messages Body */}
-          <div className="flex-1 overflow-y-auto p-4 space-y-3 bg-stone-50/60 dark:bg-stone-950/40 text-xs sm:text-sm">
+          <div className="flex-1 overflow-y-auto p-4 space-y-3.5 bg-stone-50/70 dark:bg-stone-950/50 text-xs sm:text-sm">
             {messages.map((m) => (
               <div
                 key={m.id}
                 className={`flex gap-2.5 ${m.sender === "user" ? "justify-end" : "justify-start"}`}
               >
                 {m.sender === "bot" && (
-                  <div className="flex h-7 w-7 shrink-0 items-center justify-center rounded-full bg-gradient-to-br from-orange-500 to-amber-600 text-white mt-0.5">
+                  <div className="flex h-7 w-7 shrink-0 items-center justify-center rounded-full bg-gradient-to-br from-orange-500 to-amber-600 text-white mt-0.5 shadow-xs">
                     <Bot className="h-4 w-4" />
                   </div>
                 )}
+
                 <div
-                  className={`max-w-[80%] rounded-2xl px-3.5 py-2.5 shadow-xs whitespace-pre-line leading-relaxed ${
+                  className={`max-w-[85%] rounded-2xl px-3.5 py-2.5 shadow-xs leading-relaxed ${
                     m.sender === "user"
-                      ? "bg-gradient-to-r from-orange-600 to-amber-600 text-white rounded-br-xs"
-                      : "bg-white dark:bg-stone-800 text-stone-800 dark:text-stone-100 border border-stone-200/80 dark:border-stone-700/80 rounded-bl-xs"
+                      ? "bg-gradient-to-r from-orange-600 to-amber-600 text-white rounded-br-xs whitespace-pre-line"
+                      : "bg-white dark:bg-stone-800/90 text-stone-800 dark:text-stone-100 border border-stone-200/90 dark:border-stone-700/80 rounded-bl-xs"
                   }`}
                 >
-                  <p>{m.text}</p>
-                  <span
-                    className={`block text-[10px] mt-1 text-right ${
-                      m.sender === "user" ? "text-orange-200" : "text-stone-400"
-                    }`}
-                  >
-                    {m.timestamp}
-                  </span>
+                  {m.sender === "user" ? (
+                    <p>{m.text}</p>
+                  ) : (
+                    <div>{formatBotMessage(m.text)}</div>
+                  )}
+
+                  <div className="flex items-center justify-between mt-2 pt-1 border-t border-stone-100 dark:border-stone-700/40 text-[10px]">
+                    {m.sender === "bot" ? (
+                      <button
+                        onClick={() => toggleSpeech(m.id, m.text)}
+                        className={`flex items-center gap-1 px-1.5 py-0.5 rounded transition-colors cursor-pointer ${
+                          speakingMessageId === m.id
+                            ? "bg-orange-100 dark:bg-orange-950/60 text-orange-700 dark:text-orange-300 font-semibold"
+                            : "text-stone-400 hover:text-orange-600 dark:hover:text-orange-400"
+                        }`}
+                        title={speakingMessageId === m.id ? "Stop voice playback" : "Read message aloud (TTS)"}
+                      >
+                        {speakingMessageId === m.id ? (
+                          <>
+                            <VolumeX className="h-3.5 w-3.5 text-orange-600 animate-pulse" />
+                            <span>Speaking...</span>
+                          </>
+                        ) : (
+                          <>
+                            <Volume2 className="h-3.5 w-3.5" />
+                            <span>Listen</span>
+                          </>
+                        )}
+                      </button>
+                    ) : (
+                      <div />
+                    )}
+
+                    <span
+                      className={m.sender === "user" ? "text-orange-200 ml-auto" : "text-stone-400"}
+                    >
+                      {m.timestamp}
+                    </span>
+                  </div>
                 </div>
+
                 {m.sender === "user" && (
                   <div className="flex h-7 w-7 shrink-0 items-center justify-center rounded-full bg-stone-300 dark:bg-stone-700 text-stone-700 dark:text-stone-200 mt-0.5">
                     <User className="h-4 w-4" />
@@ -235,19 +498,19 @@ export default function ChatbotWidget() {
             ))}
 
             {isLoading && (
-              <div className="flex items-center gap-2 text-stone-400 text-xs py-1">
-                <div className="flex h-6 w-6 items-center justify-center rounded-full bg-orange-100 text-orange-600 dark:bg-orange-950">
-                  <Bot className="h-3.5 w-3.5 animate-pulse" />
+              <div className="flex items-center gap-2 text-stone-500 dark:text-stone-400 text-xs py-1.5 px-1 animate-pulse">
+                <div className="flex h-6 w-6 items-center justify-center rounded-full bg-orange-100 text-orange-600 dark:bg-orange-950/80">
+                  <Bot className="h-3.5 w-3.5 animate-bounce" />
                 </div>
-                <span className="italic">AI is thinking & analyzing guidelines...</span>
+                <span className="italic font-medium">Gemini LLM is consulting tribal welfare policies...</span>
               </div>
             )}
             <div ref={messagesEndRef} />
           </div>
 
           {/* Quick Suggestions Chips */}
-          <div className="p-2 border-t border-stone-200/60 dark:border-stone-800 bg-white dark:bg-stone-900">
-            <div className="flex items-center gap-1 mb-1.5 px-1 text-[11px] font-semibold text-stone-500">
+          <div className="p-2 border-t border-stone-200/80 dark:border-stone-800 bg-white dark:bg-stone-900">
+            <div className="flex items-center gap-1 mb-1.5 px-1 text-[11px] font-semibold text-stone-500 dark:text-stone-400">
               <HelpCircle className="h-3 w-3 text-orange-500" /> {t("suggestedQueries")}
             </div>
             <div className="flex gap-1.5 overflow-x-auto pb-1 scrollbar-none text-[11px]">
@@ -255,7 +518,7 @@ export default function ChatbotWidget() {
                 <button
                   key={idx}
                   onClick={() => handleSend(s)}
-                  className="shrink-0 rounded-full border border-orange-200 dark:border-stone-700 bg-orange-50 dark:bg-stone-800/70 px-2.5 py-1 text-orange-950 dark:text-orange-200 hover:bg-orange-100 dark:hover:bg-stone-800 transition-colors cursor-pointer"
+                  className="shrink-0 rounded-full border border-orange-200 dark:border-stone-700 bg-orange-50/80 dark:bg-stone-800/80 px-2.5 py-1 text-orange-950 dark:text-orange-200 hover:bg-orange-100 dark:hover:bg-stone-800 transition-colors cursor-pointer text-left font-medium"
                 >
                   {s}
                 </button>
@@ -263,8 +526,15 @@ export default function ChatbotWidget() {
             </div>
           </div>
 
-          {/* Input Box */}
+          {/* Input Box with Voice Mic button (STT) */}
           <div className="p-3 bg-white dark:bg-stone-900 border-t border-stone-200 dark:border-stone-800">
+            {isListening && (
+              <div className="flex items-center gap-2 mb-2 px-2 py-1 rounded-lg bg-red-50 dark:bg-red-950/40 border border-red-200 dark:border-red-800/50 text-red-600 dark:text-red-400 text-xs animate-pulse">
+                <span className="h-2 w-2 rounded-full bg-red-600 inline-block animate-ping"></span>
+                <span>Listening to your speech... Speak now ({language.toUpperCase()})</span>
+              </div>
+            )}
+
             <form
               onSubmit={(e) => {
                 e.preventDefault();
@@ -276,13 +546,29 @@ export default function ChatbotWidget() {
                 type="text"
                 value={inputMessage}
                 onChange={(e) => setInputMessage(e.target.value)}
-                placeholder={t("chatPlaceholder")}
+                placeholder={isListening ? "Listening to voice input..." : t("chatPlaceholder")}
                 className="flex-1 rounded-xl border border-stone-300 dark:border-stone-700 bg-stone-50 dark:bg-stone-800/50 px-3.5 py-2 text-xs sm:text-sm text-stone-900 dark:text-stone-100 placeholder-stone-400 outline-hidden focus:border-orange-500 focus:ring-1 focus:ring-orange-500 transition-all"
               />
+
+              {/* Speech-to-Text Microphone Button */}
+              <button
+                type="button"
+                onClick={toggleVoiceInput}
+                className={`flex h-9 w-9 shrink-0 items-center justify-center rounded-xl transition-all cursor-pointer ${
+                  isListening
+                    ? "bg-red-600 text-white animate-pulse shadow-md shadow-red-500/30"
+                    : "bg-stone-100 dark:bg-stone-800 text-stone-600 dark:text-stone-300 hover:bg-orange-50 hover:text-orange-600 dark:hover:bg-stone-700"
+                }`}
+                title={isListening ? "Stop listening" : "Click to speak (Speech-to-Text)"}
+              >
+                {isListening ? <MicOff className="h-4 w-4" /> : <Mic className="h-4 w-4" />}
+              </button>
+
+              {/* Send Button */}
               <button
                 type="submit"
                 disabled={!inputMessage.trim() || isLoading}
-                className="flex h-9 w-9 shrink-0 items-center justify-center rounded-xl bg-orange-600 text-white disabled:opacity-40 hover:bg-orange-500 active:scale-95 transition-all cursor-pointer"
+                className="flex h-9 w-9 shrink-0 items-center justify-center rounded-xl bg-orange-600 text-white disabled:opacity-40 hover:bg-orange-500 active:scale-95 transition-all cursor-pointer shadow-xs"
               >
                 <Send className="h-4 w-4" />
               </button>
