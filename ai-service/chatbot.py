@@ -1,7 +1,9 @@
 import os
 import re
+import io
 from typing import List, Optional
-from fastapi import APIRouter
+from fastapi import APIRouter, HTTPException, Query
+from fastapi.responses import StreamingResponse
 from pydantic import BaseModel
 from dotenv import load_dotenv
 
@@ -9,6 +11,10 @@ from dotenv import load_dotenv
 load_dotenv()
 
 router = APIRouter(prefix="/api/ai", tags=["Vernacular Chatbot Assistant"])
+
+class TTSRequest(BaseModel):
+    text: str
+    language: Optional[str] = "en"
 
 class ChatRequest(BaseModel):
     message: str
@@ -358,3 +364,53 @@ SUGGESTIONS: <Question 1 in {target_name}> | <Question 2 in {target_name}> | <Qu
         intent="GENERAL_ADVISORY",
         suggestions=current_defaults
     )
+
+
+@router.post("/tts")
+def text_to_speech(req: TTSRequest):
+    """
+    Generate authentic regional accent Text-To-Speech audio stream (MP3).
+    - Bengali ('bn'): Native Indian Bengali accent
+    - Hindi ('hi'): Native Indian Hindi accent
+    - Assamese ('as'): Native Eastern Indic accent
+    - Santhali ('sat'): Native Indic accent
+    - English ('en'): Native Indian English accent (co.in)
+    """
+    content = req.text
+    if not content:
+        raise HTTPException(status_code=400, detail="Text cannot be empty.")
+
+    # Clean markdown, bullets, and excessive spaces
+    clean_text = re.sub(r"[#*_`~>\[\]]", " ", content)
+    clean_text = re.sub(r"https?://\S+", "", clean_text)
+    clean_text = re.sub(r"\s+", " ", clean_text).strip()
+
+    if not clean_text:
+        clean_text = "Johar"
+
+    # Truncate to first 450 characters for rapid real-time audio playback
+    if len(clean_text) > 450:
+        clean_text = clean_text[:450] + "..."
+
+    norm_lang = normalize_lang_code(req.language)
+
+    try:
+        from gtts import gTTS
+        if norm_lang == "bn":
+            tts = gTTS(text=clean_text, lang="bn", slow=False)
+        elif norm_lang == "hi":
+            tts = gTTS(text=clean_text, lang="hi", slow=False)
+        elif norm_lang == "as":
+            tts = gTTS(text=clean_text, lang="bn", slow=False)
+        elif norm_lang == "sat":
+            tts = gTTS(text=clean_text, lang="hi", slow=False)
+        else: # Indian English accent
+            tts = gTTS(text=clean_text, lang="en", tld="co.in", slow=False)
+
+        fp = io.BytesIO()
+        tts.write_to_fp(fp)
+        fp.seek(0)
+        return StreamingResponse(fp, media_type="audio/mpeg")
+    except Exception as e:
+        print(f"TTS audio generation exception: {e}")
+        raise HTTPException(status_code=500, detail=f"TTS Generation failed: {str(e)}")

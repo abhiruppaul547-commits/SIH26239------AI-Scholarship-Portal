@@ -9,3 +9,4 @@ scikit-learn
 google-genai>=2.3.0
 python-dotenv
 requests
+gTTS>=2.5.0

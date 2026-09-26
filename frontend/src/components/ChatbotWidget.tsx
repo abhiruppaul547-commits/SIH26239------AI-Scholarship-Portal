@@ -148,7 +148,8 @@ function stripMarkdown(text: string): string {
   return text
     .replace(/[*#_~`>]/g, "")
     .replace(/\[([^\]]+)\]\([^)]+\)/g, "$1")
-    .replace(/\n+/g, " ")
+    .replace(/[\u{1F600}-\u{1F64F}\u{1F300}-\u{1F5FF}\u{1F680}-\u{1F6FF}\u{2600}-\u{26FF}\u{2700}-\u{27BF}]/gu, "")
+    .replace(/\s+/g, " ")
     .trim();
 }
 
@@ -175,6 +176,17 @@ export default function ChatbotWidget() {
 
   const messagesEndRef = useRef<HTMLDivElement>(null);
   const recognitionRef = useRef<any>(null);
+  const audioRef = useRef<HTMLAudioElement | null>(null);
+
+  // Preload speech synthesis voices for regional Indic accent fallback
+  useEffect(() => {
+    if (typeof window !== "undefined" && "speechSynthesis" in window) {
+      window.speechSynthesis.getVoices();
+      window.speechSynthesis.onvoiceschanged = () => {
+        window.speechSynthesis.getVoices();
+      };
+    }
+  }, []);
 
   // Sync welcome message and suggestions when language changes
   useEffect(() => {
@@ -204,9 +216,13 @@ export default function ChatbotWidget() {
     }
   }, [messages, isOpen]);
 
-  // Clean up speech synthesis when component unmounts or closes
+  // Clean up audio and speech synthesis when component unmounts or closes
   useEffect(() => {
     return () => {
+      if (audioRef.current) {
+        audioRef.current.pause();
+        audioRef.current = null;
+      }
       if (typeof window !== "undefined" && "speechSynthesis" in window) {
         window.speechSynthesis.cancel();
       }
@@ -223,6 +239,10 @@ export default function ChatbotWidget() {
     if (!query.trim()) return;
 
     // Stop speaking any previous message
+    if (audioRef.current) {
+      audioRef.current.pause();
+      audioRef.current = null;
+    }
     if (typeof window !== "undefined" && "speechSynthesis" in window) {
       window.speechSynthesis.cancel();
       setSpeakingMessageId(null);
@@ -264,49 +284,116 @@ export default function ChatbotWidget() {
     }
   };
 
-  // Text-To-Speech (TTS) Handler
-  const toggleSpeech = useCallback(
-    (msgId: string, rawText: string) => {
+  // Browser SpeechSynthesis with authentic Indic regional voice selection
+  const playWithBrowserSpeech = useCallback(
+    (cleanText: string, lang: Language, msgId: string) => {
       if (typeof window === "undefined" || !("speechSynthesis" in window)) {
-        alert("Text-to-speech is not supported on this browser.");
-        return;
-      }
-
-      if (speakingMessageId === msgId) {
-        window.speechSynthesis.cancel();
         setSpeakingMessageId(null);
         return;
       }
 
       window.speechSynthesis.cancel();
-      const cleanText = stripMarkdown(rawText);
       const utterance = new SpeechSynthesisUtterance(cleanText);
-
-      const targetLang = SPEECH_LANG_CODES[language] || "en-IN";
+      const targetLang = SPEECH_LANG_CODES[lang] || "en-IN";
       utterance.lang = targetLang;
-      utterance.rate = 0.95; // slightly slower for maximum clarity
+      utterance.rate = 0.92; // Natural conversational cadence
+      utterance.pitch = 1.0;
 
-      // Find an matching voice if available
       const voices = window.speechSynthesis.getVoices();
-      const voice = voices.find(
-        (v) => v.lang.toLowerCase() === targetLang.toLowerCase() || v.lang.startsWith(targetLang.split("-")[0])
+      const prefix = targetLang.split("-")[0];
+
+      // Prioritize natural neural/online Indic regional voices (Google, Microsoft Natural)
+      let bestVoice = voices.find(
+        (v) =>
+          (v.lang.toLowerCase().startsWith(prefix) || v.lang.toLowerCase() === targetLang.toLowerCase()) &&
+          /natural|online|google/i.test(v.name)
       );
-      if (voice) {
-        utterance.voice = voice;
+
+      // Fallback to any voice matching target language
+      if (!bestVoice) {
+        bestVoice = voices.find((v) => v.lang.toLowerCase().startsWith(prefix));
+      }
+
+      // For Assamese ('as') or Santhali ('sat'), use Eastern Indic voice (bn-IN or hi-IN)
+      if (!bestVoice && (prefix === "as" || prefix === "sat")) {
+        bestVoice =
+          voices.find(
+            (v) => (v.lang.startsWith("bn") || v.lang.startsWith("hi")) && /natural|online|google/i.test(v.name)
+          ) || voices.find((v) => v.lang.startsWith("bn") || v.lang.startsWith("hi"));
+      }
+
+      if (bestVoice) {
+        utterance.voice = bestVoice;
       }
 
       utterance.onend = () => {
-        setSpeakingMessageId(null);
+        setSpeakingMessageId((current) => (current === msgId ? null : current));
       };
 
       utterance.onerror = () => {
-        setSpeakingMessageId(null);
+        setSpeakingMessageId((current) => (current === msgId ? null : current));
       };
 
-      setSpeakingMessageId(msgId);
       window.speechSynthesis.speak(utterance);
     },
-    [speakingMessageId, language]
+    []
+  );
+
+  // Text-To-Speech (TTS) Handler with Natural Regional Accent Support
+  const toggleSpeech = useCallback(
+    async (msgId: string, rawText: string) => {
+      // 1. If currently speaking this message, toggle off
+      if (speakingMessageId === msgId) {
+        if (audioRef.current) {
+          audioRef.current.pause();
+          audioRef.current.currentTime = 0;
+          audioRef.current = null;
+        }
+        if (typeof window !== "undefined" && "speechSynthesis" in window) {
+          window.speechSynthesis.cancel();
+        }
+        setSpeakingMessageId(null);
+        return;
+      }
+
+      // 2. Stop any existing audio before starting new playback
+      if (audioRef.current) {
+        audioRef.current.pause();
+        audioRef.current.currentTime = 0;
+        audioRef.current = null;
+      }
+      if (typeof window !== "undefined" && "speechSynthesis" in window) {
+        window.speechSynthesis.cancel();
+      }
+
+      setSpeakingMessageId(msgId);
+      const cleanText = stripMarkdown(rawText);
+
+      // 3. Primary: High-fidelity server-side natural regional voice streaming
+      try {
+        const audioUrl = await aiApi.generateSpeechAudio(cleanText, language);
+        if (audioUrl) {
+          const audio = new Audio(audioUrl);
+          audioRef.current = audio;
+          audio.onended = () => {
+            setSpeakingMessageId((current) => (current === msgId ? null : current));
+            URL.revokeObjectURL(audioUrl);
+          };
+          audio.onerror = () => {
+            URL.revokeObjectURL(audioUrl);
+            playWithBrowserSpeech(cleanText, language, msgId);
+          };
+          await audio.play();
+          return;
+        }
+      } catch (err) {
+        console.warn("Server TTS audio error, falling back to browser speech:", err);
+      }
+
+      // 4. Fallback: Intelligent browser speech synthesis with authentic regional accent
+      playWithBrowserSpeech(cleanText, language, msgId);
+    },
+    [speakingMessageId, language, playWithBrowserSpeech]
   );
 
   // Speech-To-Text (STT) Handler
