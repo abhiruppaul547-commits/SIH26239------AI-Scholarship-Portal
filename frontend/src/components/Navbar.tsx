@@ -2,12 +2,14 @@
 
 import Link from "next/link";
 import { useEffect, useState } from "react";
-import { GraduationCap, User, LogOut, Shield, Sparkles, Globe, FileText, LayoutDashboard } from "lucide-react";
+import { GraduationCap, User, LogOut, Shield, Sparkles, Globe, FileText, LayoutDashboard, ChevronDown } from "lucide-react";
 import { authApi } from "@/lib/api";
+import { useLanguage, SUPPORTED_LANGUAGES, Language } from "@/lib/i18n";
 
 export default function Navbar() {
   const [currentUser, setCurrentUser] = useState<any>(null);
-  const [currentLang, setCurrentLang] = useState("EN");
+  const { language, setLanguage, t } = useLanguage();
+  const [isLangOpen, setIsLangOpen] = useState(false);
 
   useEffect(() => {
     const user = authApi.getCurrentUser();
@@ -20,12 +22,14 @@ export default function Navbar() {
     window.location.href = "/";
   };
 
+  const currentLangObj = SUPPORTED_LANGUAGES.find((l) => l.code === language) || SUPPORTED_LANGUAGES[0];
+
   return (
     <header className="sticky top-0 z-40 w-full border-b border-amber-200/40 bg-white/90 backdrop-blur-md dark:border-stone-800 dark:bg-stone-950/90 shadow-xs">
       <div className="mx-auto flex h-16 max-w-7xl items-center justify-between px-4 sm:px-6 lg:px-8">
         {/* Brand / Emblem */}
         <Link href="/" className="flex items-center gap-3 group">
-          <div className="flex h-11 w-11 items-center justify-center rounded-xl bg-gradient-to-br from-amber-600 to-orange-700 text-white shadow-md shadow-orange-500/20 group-hover:scale-105 transition-transform">
+          <div className="flex h-11 w-11 items-center justify-center rounded-xl bg-gradient-to-br from-orange-600 to-amber-700 text-white shadow-md shadow-orange-500/20 group-hover:scale-105 transition-transform">
             <GraduationCap className="h-6 w-6" />
           </div>
           <div>
@@ -34,11 +38,11 @@ export default function Navbar() {
                 SIH26239
               </span>
               <span className="inline-flex items-center gap-1 rounded-full bg-orange-100 dark:bg-orange-950/80 px-2 py-0.5 text-[11px] font-semibold text-orange-800 dark:text-orange-300">
-                <Sparkles className="h-3 w-3" /> AI Portal
+                <Sparkles className="h-3 w-3" /> {t("aiPortal")}
               </span>
             </div>
             <p className="text-[11px] text-stone-500 dark:text-stone-400 font-medium tracking-tight">
-              Tribal Scholarship Management System
+              {t("brandSub")}
             </p>
           </div>
         </Link>
@@ -46,37 +50,57 @@ export default function Navbar() {
         {/* Navigation links */}
         <nav className="hidden md:flex items-center gap-6 text-sm font-medium text-stone-600 dark:text-stone-300">
           <Link href="/" className="hover:text-orange-600 dark:hover:text-orange-400 transition-colors">
-            Home
+            {t("navHome")}
           </Link>
           <Link href="/apply" className="hover:text-orange-600 dark:hover:text-orange-400 transition-colors flex items-center gap-1.5">
-            <FileText className="h-4 w-4" /> Apply Now
+            <FileText className="h-4 w-4" /> {t("navApply")}
           </Link>
           <Link href="/dashboard" className="hover:text-orange-600 dark:hover:text-orange-400 transition-colors flex items-center gap-1.5">
-            <LayoutDashboard className="h-4 w-4" /> Student Portal
+            <LayoutDashboard className="h-4 w-4" /> {t("navDashboard")}
           </Link>
           <Link href="/admin-dashboard" className="hover:text-orange-600 dark:hover:text-orange-400 transition-colors flex items-center gap-1.5">
-            <Shield className="h-4 w-4" /> Ministry Scrutiny
+            <Shield className="h-4 w-4" /> {t("navAdmin")}
           </Link>
         </nav>
 
         {/* Actions & Profile */}
         <div className="flex items-center gap-3">
-          {/* Vernacular Language Selector */}
-          <div className="flex items-center rounded-lg border border-stone-200 dark:border-stone-800 p-1 text-xs font-semibold bg-stone-50 dark:bg-stone-900">
-            <Globe className="h-3.5 w-3.5 text-stone-500 ml-1.5 mr-1" />
-            {(["EN", "हिन्दी", "संताली"] as const).map((lang) => (
-              <button
-                key={lang}
-                onClick={() => setCurrentLang(lang)}
-                className={`px-2 py-1 rounded-md transition-all ${
-                  currentLang === lang
-                    ? "bg-amber-600 text-white shadow-xs"
-                    : "text-stone-600 dark:text-stone-400 hover:text-stone-900"
-                }`}
-              >
-                {lang}
-              </button>
-            ))}
+          {/* Vernacular Language Dropdown Picker */}
+          <div className="relative">
+            <button
+              type="button"
+              onClick={() => setIsLangOpen(!isLangOpen)}
+              className="flex items-center gap-1.5 rounded-xl border border-stone-200 dark:border-stone-800 bg-stone-50 dark:bg-stone-900 px-3 py-1.5 text-xs font-bold text-stone-700 dark:text-stone-200 hover:bg-stone-100 transition-colors shadow-2xs"
+            >
+              <Globe className="h-3.5 w-3.5 text-orange-600" />
+              <span>{currentLangObj.nativeName}</span>
+              <ChevronDown className="h-3.5 w-3.5 text-stone-400" />
+            </button>
+
+            {isLangOpen && (
+              <div className="absolute right-0 mt-1.5 w-44 rounded-2xl border border-stone-200 dark:border-stone-800 bg-white dark:bg-stone-900 p-1.5 shadow-xl z-50 animate-in fade-in duration-150">
+                <div className="px-2 py-1 text-[10px] font-bold text-stone-400 uppercase tracking-wider">
+                  Select Language / ভাষা
+                </div>
+                {SUPPORTED_LANGUAGES.map((lang) => (
+                  <button
+                    key={lang.code}
+                    onClick={() => {
+                      setLanguage(lang.code);
+                      setIsLangOpen(false);
+                    }}
+                    className={`flex items-center justify-between w-full rounded-xl px-2.5 py-1.5 text-xs font-semibold transition-all ${
+                      language === lang.code
+                        ? "bg-orange-600 text-white shadow-xs"
+                        : "text-stone-700 dark:text-stone-300 hover:bg-stone-100 dark:hover:bg-stone-800"
+                    }`}
+                  >
+                    <span>{lang.nativeName}</span>
+                    <span className="text-[10px] opacity-70 uppercase">{lang.code}</span>
+                  </button>
+                ))}
+              </div>
+            )}
           </div>
 
           {currentUser ? (
@@ -105,13 +129,13 @@ export default function Navbar() {
                 href="/register"
                 className="rounded-xl border border-stone-300 dark:border-stone-700 px-3.5 py-1.5 text-xs font-semibold text-stone-700 dark:text-stone-300 hover:bg-stone-100 dark:hover:bg-stone-900 transition-colors"
               >
-                Sign In
+                {t("navSignIn")}
               </Link>
               <Link
                 href="/register?tab=register"
                 className="rounded-xl bg-gradient-to-r from-orange-600 to-amber-600 px-4 py-1.5 text-xs font-semibold text-white shadow-sm hover:from-orange-500 hover:to-amber-500 transition-all"
               >
-                Register
+                {t("navRegister")}
               </Link>
             </div>
           )}

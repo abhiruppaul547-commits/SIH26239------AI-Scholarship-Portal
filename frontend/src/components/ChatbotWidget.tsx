@@ -1,8 +1,9 @@
 "use client";
 
 import { useState, useRef, useEffect } from "react";
-import { MessageSquare, X, Send, Bot, User, Sparkles, HelpCircle } from "lucide-react";
+import { X, Send, Bot, User, Sparkles, HelpCircle } from "lucide-react";
 import { aiApi } from "@/lib/api";
+import { useLanguage, SUPPORTED_LANGUAGES, Language } from "@/lib/i18n";
 
 interface Message {
   id: string;
@@ -11,26 +12,81 @@ interface Message {
   timestamp: string;
 }
 
-export default function ChatbotWidget() {
-  const [isOpen, setIsOpen] = useState(false);
-  const [inputMessage, setInputMessage] = useState("");
-  const [isLoading, setIsLoading] = useState(false);
-  const [language, setLanguage] = useState<"en" | "hi" | "santhali">("en");
-  const [messages, setMessages] = useState<Message[]>([
-    {
-      id: "welcome",
-      sender: "bot",
-      text: "Johar! 🙏 I am your AI Scholarship Assistant for tribal students. How can I assist you with schemes, documents, or OCR verification today?",
-      timestamp: new Date().toLocaleTimeString([], { hour: "2-digit", minute: "2-digit" }),
-    },
-  ]);
-
-  const [suggestions, setSuggestions] = useState<string[]>([
+const NATIVE_SUGGESTIONS: Record<Language, string[]> = {
+  en: [
     "What documents do I need to apply?",
     "What is the income limit for ST scholarship?",
     "How does the Auto-Fill OCR work?",
     "How do I track my application?",
+  ],
+  hi: [
+    "आवेदन के लिए कौन से दस्तावेज़ चाहिए?",
+    "ST छात्रवृत्ति के लिए आय सीमा क्या है?",
+    "दस्तावेज़ से Auto-Fill कैसे काम करता है?",
+    "आवेदन की स्थिति कैसे जांचें?",
+  ],
+  sat: [
+    "ᱪᱮᱫ ᱠᱟᱜᱚᱡᱽ ᱠᱚ ᱞᱟᱜᱟᱜ-ᱟ?",
+    "ST ᱞᱟᱹᱜᱤᱫ ᱥᱮᱨᱢᱟ ᱟᱭ ᱛᱤᱱᱟᱹᱜ ᱞᱟᱹᱠᱛᱤ?",
+    "Auto-Fill OCR ᱪᱮᱫ ᱞᱮᱠᱟ ᱠᱟᱹᱢᱤᱭᱟ?",
+    "ᱤᱧᱟᱜ ᱫᱚᱨᱠᱷᱟᱥᱛ ᱦᱟᱞᱚᱛ ᱪᱮᱠ ᱢᱮ",
+  ],
+  bn: [
+    "আবেদন করতে কি কি কাগজপত্র লাগবে?",
+    "ST বৃত্তির পারিবারিক আয়ের সর্বোচ্চ সীমা কত?",
+    "ডকুমেন্ট থেকে Auto-Fill কীভাবে কাজ করে?",
+    "আবেদনের স্ট্যাটাস কীভাবে চেক করব?",
+  ],
+  as: [
+    "আবেদন কৰিবলৈ কি কি নথিপত্ৰ লাগিব?",
+    "ST বৃত্তিৰ বাবে সৰ্বাধিক আয়ৰ সীমা কিমান?",
+    "নথিপত্ৰৰ পৰা Auto-Fill কেনেকৈ হয়?",
+    "আবেদনৰ স্থিতি কেনেকৈ পৰীক্ষা কৰিম?",
+  ],
+};
+
+const WELCOME_MESSAGES: Record<Language, string> = {
+  en: "Johar! 🙏 I am your AI Scholarship Assistant for tribal students. How can I assist you with schemes, documents, or OCR verification today?",
+  hi: "जोहार! 🙏 मैं जनजातीय छात्रों के लिए आपका AI छात्रवृत्ति सहायक हूँ। योजनाओं, प्रमाणपत्रों या AI सत्यापन में मैं आपकी क्या मदद करूँ?",
+  sat: "ᱡᱚᱦᱟᱨ! 🙏 ᱤᱧ ᱟᱹᱫᱤᱵᱟᱹᱥᱤ ᱯᱟᱹᱴᱷᱩᱣᱟᱹ ᱠᱚ ᱞᱟᱹᱜᱤᱫ AI ᱥᱠᱚᱞᱟᱨᱥᱤᱯ ᱜᱚᱲᱚᱭᱤᱡ। ᱪᱮᱫ ᱜᱚᱲᱚ ᱞᱟᱹᱠᱛᱤ ᱠᱟᱱᱟ?",
+  bn: "জোহার! 🙏 আমি উপজাতি শিক্ষার্থীদের জন্য আপনার AI বৃত্তি সহায়ক। স্কলারশিপ, নথিপত্র বা অটো-ফিল সংক্রান্ত কী জানতে চান?",
+  as: "জোহাৰ! 🙏 মই জনজাতীয় শিক্ষাৰ্থীসকলৰ বাবে AI বৃত্তি সহায়ক। আঁচনি বা নথিপত্ৰ পৰীক্ষাৰ ক্ষেত্ৰত কি সহায় কৰিব পাৰোঁ?",
+};
+
+export default function ChatbotWidget() {
+  const [isOpen, setIsOpen] = useState(false);
+  const [inputMessage, setInputMessage] = useState("");
+  const [isLoading, setIsLoading] = useState(false);
+  const { language, setLanguage, t } = useLanguage();
+
+  const [messages, setMessages] = useState<Message[]>([
+    {
+      id: "welcome",
+      sender: "bot",
+      text: WELCOME_MESSAGES[language] || WELCOME_MESSAGES.en,
+      timestamp: new Date().toLocaleTimeString([], { hour: "2-digit", minute: "2-digit" }),
+    },
   ]);
+
+  const [suggestions, setSuggestions] = useState<string[]>(NATIVE_SUGGESTIONS[language] || NATIVE_SUGGESTIONS.en);
+
+  // Sync welcome message and suggestions when language changes
+  useEffect(() => {
+    setSuggestions(NATIVE_SUGGESTIONS[language] || NATIVE_SUGGESTIONS.en);
+    setMessages((prev) => {
+      if (prev.length === 1 && prev[0].id === "welcome") {
+        return [
+          {
+            id: "welcome",
+            sender: "bot",
+            text: WELCOME_MESSAGES[language] || WELCOME_MESSAGES.en,
+            timestamp: new Date().toLocaleTimeString([], { hour: "2-digit", minute: "2-digit" }),
+          },
+        ];
+      }
+      return prev;
+    });
+  }, [language]);
 
   const messagesEndRef = useRef<HTMLDivElement>(null);
 
@@ -64,7 +120,7 @@ export default function ChatbotWidget() {
       const botMsg: Message = {
         id: (Date.now() + 1).toString(),
         sender: "bot",
-        text: data.reply || "Johar! Your query has been recorded. Please check scholarship guidelines or contact district nodal officer.",
+        text: data.reply || WELCOME_MESSAGES[language],
         timestamp: new Date().toLocaleTimeString([], { hour: "2-digit", minute: "2-digit" }),
       };
       setMessages((prev) => [...prev, botMsg]);
@@ -75,7 +131,7 @@ export default function ChatbotWidget() {
       const fallbackMsg: Message = {
         id: (Date.now() + 1).toString(),
         sender: "bot",
-        text: "Johar! For tribal scholarship applications, you primarily need your ST Caste Certificate, Family Income Certificate, and latest Marksheet. You can use our Auto-Fill button on the Apply page!",
+        text: WELCOME_MESSAGES[language] || "Johar! Please check scholarship guidelines or contact district nodal officer.",
         timestamp: new Date().toLocaleTimeString([], { hour: "2-digit", minute: "2-digit" }),
       };
       setMessages((prev) => [...prev, fallbackMsg]);
@@ -90,7 +146,7 @@ export default function ChatbotWidget() {
       {!isOpen && (
         <button
           onClick={() => setIsOpen(true)}
-          className="group relative flex h-14 w-14 items-center justify-center rounded-full bg-gradient-to-r from-orange-600 via-amber-600 to-orange-700 text-white shadow-xl shadow-orange-600/30 hover:scale-105 active:scale-95 transition-all"
+          className="group relative flex h-14 w-14 items-center justify-center rounded-full bg-gradient-to-r from-orange-600 via-amber-600 to-orange-700 text-white shadow-xl shadow-orange-600/30 hover:scale-105 active:scale-95 transition-all cursor-pointer"
           aria-label="Open AI Assistant"
         >
           <div className="absolute -top-1 -right-1 flex h-4 w-4">
@@ -111,29 +167,31 @@ export default function ChatbotWidget() {
                 <Sparkles className="h-5 w-5 text-amber-200" />
               </div>
               <div>
-                <h3 className="text-sm font-bold leading-tight">Vernacular AI Assistant</h3>
+                <h3 className="text-sm font-bold leading-tight">{t("chatTitle")}</h3>
                 <p className="text-[11px] text-orange-100 flex items-center gap-1 font-medium">
                   <span className="h-2 w-2 rounded-full bg-emerald-400 inline-block"></span>
-                  Active • SIH26239 NLP Engine
+                  {t("chatActive")}
                 </p>
               </div>
             </div>
 
             <div className="flex items-center gap-2">
-              {/* Language Selector */}
+              {/* Language Selector Dropdown inside Chatbot */}
               <select
                 value={language}
-                onChange={(e) => setLanguage(e.target.value as any)}
+                onChange={(e) => setLanguage(e.target.value as Language)}
                 className="bg-white/20 text-white text-xs rounded-md px-2 py-1 outline-hidden border border-white/30 cursor-pointer font-medium"
               >
-                <option value="en" className="text-black">English</option>
-                <option value="hi" className="text-black">हिन्दी (Hindi)</option>
-                <option value="santhali" className="text-black">संताली (Santhali)</option>
+                {SUPPORTED_LANGUAGES.map((l) => (
+                  <option key={l.code} value={l.code} className="text-black">
+                    {l.nativeName}
+                  </option>
+                ))}
               </select>
 
               <button
                 onClick={() => setIsOpen(false)}
-                className="rounded-lg p-1 text-white/80 hover:bg-white/20 hover:text-white transition-colors"
+                className="rounded-lg p-1 text-white/80 hover:bg-white/20 hover:text-white transition-colors cursor-pointer"
               >
                 <X className="h-5 w-5" />
               </button>
@@ -190,14 +248,14 @@ export default function ChatbotWidget() {
           {/* Quick Suggestions Chips */}
           <div className="p-2 border-t border-stone-200/60 dark:border-stone-800 bg-white dark:bg-stone-900">
             <div className="flex items-center gap-1 mb-1.5 px-1 text-[11px] font-semibold text-stone-500">
-              <HelpCircle className="h-3 w-3 text-orange-500" /> Suggested Queries:
+              <HelpCircle className="h-3 w-3 text-orange-500" /> {t("suggestedQueries")}
             </div>
             <div className="flex gap-1.5 overflow-x-auto pb-1 scrollbar-none text-[11px]">
               {suggestions.map((s, idx) => (
                 <button
                   key={idx}
                   onClick={() => handleSend(s)}
-                  className="shrink-0 rounded-full border border-orange-200 dark:border-stone-700 bg-orange-50 dark:bg-stone-800/70 px-2.5 py-1 text-orange-950 dark:text-orange-200 hover:bg-orange-100 dark:hover:bg-stone-800 transition-colors"
+                  className="shrink-0 rounded-full border border-orange-200 dark:border-stone-700 bg-orange-50 dark:bg-stone-800/70 px-2.5 py-1 text-orange-950 dark:text-orange-200 hover:bg-orange-100 dark:hover:bg-stone-800 transition-colors cursor-pointer"
                 >
                   {s}
                 </button>
@@ -218,19 +276,13 @@ export default function ChatbotWidget() {
                 type="text"
                 value={inputMessage}
                 onChange={(e) => setInputMessage(e.target.value)}
-                placeholder={
-                  language === "hi"
-                    ? "अपना प्रश्न यहाँ लिखें..."
-                    : language === "santhali"
-                    ? "Apeyaq katha ol me..."
-                    : "Ask anything in English or Hindi..."
-                }
+                placeholder={t("chatPlaceholder")}
                 className="flex-1 rounded-xl border border-stone-300 dark:border-stone-700 bg-stone-50 dark:bg-stone-800/50 px-3.5 py-2 text-xs sm:text-sm text-stone-900 dark:text-stone-100 placeholder-stone-400 outline-hidden focus:border-orange-500 focus:ring-1 focus:ring-orange-500 transition-all"
               />
               <button
                 type="submit"
                 disabled={!inputMessage.trim() || isLoading}
-                className="flex h-9 w-9 shrink-0 items-center justify-center rounded-xl bg-orange-600 text-white disabled:opacity-40 hover:bg-orange-500 active:scale-95 transition-all"
+                className="flex h-9 w-9 shrink-0 items-center justify-center rounded-xl bg-orange-600 text-white disabled:opacity-40 hover:bg-orange-500 active:scale-95 transition-all cursor-pointer"
               >
                 <Send className="h-4 w-4" />
               </button>

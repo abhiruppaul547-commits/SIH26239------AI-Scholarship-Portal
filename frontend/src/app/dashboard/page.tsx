@@ -3,35 +3,32 @@
 import { useEffect, useState } from "react";
 import Link from "next/link";
 import {
-  User,
   GraduationCap,
   Sparkles,
   ShieldCheck,
   FileText,
   Clock,
   CheckCircle2,
-  AlertCircle,
   ArrowRight,
   TrendingUp,
   Percent,
 } from "lucide-react";
 import { authApi, applicationApi, scholarshipApi } from "@/lib/api";
 import ApplicationTracker from "@/components/ApplicationTracker";
+import { useLanguage } from "@/lib/i18n";
 
 export default function StudentDashboard() {
   const [profile, setProfile] = useState<any>(null);
   const [applications, setApplications] = useState<any[]>([]);
   const [recommendations, setRecommendations] = useState<any[]>([]);
-  const [loading, setLoading] = useState(true);
+  const { t } = useLanguage();
 
   useEffect(() => {
     loadDashboardData();
   }, []);
 
   const loadDashboardData = async () => {
-    setLoading(true);
     try {
-      // 1. Fetch user profile
       const prof = await authApi.getProfile().catch(() => ({
         fullName: "Birsa Soren",
         email: "student@sih.gov.in",
@@ -45,7 +42,6 @@ export default function StudentDashboard() {
       }));
       setProfile(prof);
 
-      // 2. Fetch student applications
       const apps = await applicationApi.getMyApplications().catch(() => [
         {
           id: 1,
@@ -61,7 +57,6 @@ export default function StudentDashboard() {
       ]);
       setApplications(apps);
 
-      // 3. Fetch AI recommendations
       const recData = await scholarshipApi.getRecommended().catch(() => ({
         recommendations: [
           {
@@ -94,9 +89,7 @@ export default function StudentDashboard() {
       if (recData && recData.recommendations) {
         setRecommendations(recData.recommendations);
       }
-    } finally {
-      setLoading(false);
-    }
+    } catch {}
   };
 
   return (
@@ -108,10 +101,10 @@ export default function StudentDashboard() {
             <Sparkles className="h-3.5 w-3.5" /> Direct Beneficiary Dashboard
           </div>
           <h1 className="text-3xl font-extrabold text-stone-900 dark:text-white tracking-tight">
-            Johar, {profile?.fullName || "Birsa Soren"}!
+            {t("dashboardGreeting")}, {profile?.fullName || "Birsa Soren"}!
           </h1>
           <p className="text-xs sm:text-sm text-stone-500 mt-1">
-            Track your verified certificates, AI-matched schemes, and disbursement progress.
+            {t("dashboardSub")}
           </p>
         </div>
 
@@ -119,7 +112,7 @@ export default function StudentDashboard() {
           href="/apply"
           className="inline-flex items-center gap-2 rounded-2xl bg-gradient-to-r from-orange-600 to-amber-600 px-5 py-3 text-xs sm:text-sm font-bold text-white shadow-md shadow-orange-600/25 hover:from-orange-500 hover:to-amber-500 transition-all"
         >
-          <FileText className="h-4 w-4" /> Apply for New Scheme
+          <FileText className="h-4 w-4" /> {t("applyNewScheme")}
         </Link>
       </div>
 
@@ -128,35 +121,35 @@ export default function StudentDashboard() {
         {/* Verification 1 */}
         <div className="rounded-2xl border border-stone-200/80 dark:border-stone-800 bg-white dark:bg-stone-900 p-5 shadow-xs">
           <div className="flex items-center justify-between text-xs text-stone-500 mb-2">
-            <span>Caste Verification</span>
+            <span>{t("casteVerif")}</span>
             <ShieldCheck className="h-4 w-4 text-emerald-600" />
           </div>
           <div className="text-lg font-black text-stone-900 dark:text-white">
             {profile?.category || "ST"} • {profile?.tribeName || "Santhal"}
           </div>
           <div className="mt-2 inline-flex items-center gap-1 rounded-full bg-emerald-100 text-emerald-800 dark:bg-emerald-950 dark:text-emerald-300 px-2 py-0.5 text-[11px] font-bold">
-            <CheckCircle2 className="h-3 w-3" /> AI OCR Verified
+            <CheckCircle2 className="h-3 w-3" /> {t("ocrSuccessBadge")}
           </div>
         </div>
 
         {/* Verification 2 */}
         <div className="rounded-2xl border border-stone-200/80 dark:border-stone-800 bg-white dark:bg-stone-900 p-5 shadow-xs">
           <div className="flex items-center justify-between text-xs text-stone-500 mb-2">
-            <span>Income Ceiling</span>
+            <span>{t("incomeCeiling")}</span>
             <TrendingUp className="h-4 w-4 text-emerald-600" />
           </div>
           <div className="text-lg font-black text-stone-900 dark:text-white">
-            ₹{profile?.annualFamilyIncome ? Number(profile.annualFamilyIncome).toLocaleString() : "1,20,000"} / yr
+            ₹{profile?.annualFamilyIncome ? Number(profile.annualFamilyIncome).toLocaleString() : "1,20,000"} {t("perYear")}
           </div>
           <div className="mt-2 inline-flex items-center gap-1 rounded-full bg-emerald-100 text-emerald-800 dark:bg-emerald-950 dark:text-emerald-300 px-2 py-0.5 text-[11px] font-bold">
-            <CheckCircle2 className="h-3 w-3" /> Within ST Limits
+            <CheckCircle2 className="h-3 w-3" /> {t("withinLimits")}
           </div>
         </div>
 
         {/* Institute */}
         <div className="rounded-2xl border border-stone-200/80 dark:border-stone-800 bg-white dark:bg-stone-900 p-5 shadow-xs">
           <div className="flex items-center justify-between text-xs text-stone-500 mb-2">
-            <span>Institution</span>
+            <span>{t("institutionName").replace("*", "")}</span>
             <GraduationCap className="h-4 w-4 text-orange-600" />
           </div>
           <div className="text-sm font-bold text-stone-900 dark:text-white truncate">
@@ -170,7 +163,7 @@ export default function StudentDashboard() {
         {/* Total Active Applications */}
         <div className="rounded-2xl border border-stone-200/80 dark:border-stone-800 bg-white dark:bg-stone-900 p-5 shadow-xs">
           <div className="flex items-center justify-between text-xs text-stone-500 mb-2">
-            <span>Active Applications</span>
+            <span>{t("activeApps")}</span>
             <Clock className="h-4 w-4 text-orange-600" />
           </div>
           <div className="text-2xl font-black text-orange-600">
@@ -188,10 +181,10 @@ export default function StudentDashboard() {
           <div>
             <h2 className="text-xl font-extrabold text-stone-900 dark:text-white flex items-center gap-2">
               <Sparkles className="h-5 w-5 text-orange-600" />
-              AI Scholarship Recommendations for You
+              {t("recommendationsTitle")}
             </h2>
             <p className="text-xs text-stone-500 mt-0.5">
-              Matched in real-time by the FastAPI Eligibility Engine based on your ST caste, income, and academic course.
+              {t("recommendationsSub")}
             </p>
           </div>
         </div>
@@ -205,10 +198,10 @@ export default function StudentDashboard() {
               <div className="space-y-3">
                 <div className="flex items-center justify-between">
                   <span className="inline-flex items-center gap-1 rounded-full bg-emerald-100 text-emerald-800 dark:bg-emerald-950 dark:text-emerald-300 px-2.5 py-0.5 text-xs font-bold">
-                    <Percent className="h-3 w-3" /> {rec.matchScore}% Match
+                    <Percent className="h-3 w-3" /> {rec.matchScore}% {t("matchLabel")}
                   </span>
                   <span className="text-xs font-bold text-orange-600">
-                    ₹{rec.scholarshipAmount?.toLocaleString()} / yr
+                    ₹{rec.scholarshipAmount?.toLocaleString()} {t("perYear")}
                   </span>
                 </div>
 
@@ -225,7 +218,7 @@ export default function StudentDashboard() {
                 href={`/apply?schemeId=${rec.schemeId}`}
                 className="w-full flex items-center justify-center gap-1.5 rounded-xl bg-orange-600 text-white font-bold py-2 text-xs hover:bg-orange-500 transition-colors shadow-xs"
               >
-                Apply Now <ArrowRight className="h-3.5 w-3.5" />
+                {t("navApply")} <ArrowRight className="h-3.5 w-3.5" />
               </Link>
             </div>
           ))}
@@ -237,10 +230,10 @@ export default function StudentDashboard() {
         <div>
           <h2 className="text-xl font-extrabold text-stone-900 dark:text-white flex items-center gap-2">
             <FileText className="h-5 w-5 text-orange-600" />
-            My Submitted Applications
+            {t("myAppsTitle")}
           </h2>
           <p className="text-xs text-stone-500 mt-0.5">
-            Transparent status verification, OCR score logging, and DBT disbursement alerts.
+            {t("myAppsSub")}
           </p>
         </div>
 
@@ -268,7 +261,7 @@ export default function StudentDashboard() {
                 <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-3 border-b border-stone-100 dark:border-stone-800 pb-4">
                   <div>
                     <div className="text-[11px] font-mono text-stone-400 uppercase">
-                      Application ID: {app.applicationNumber}
+                      {t("appId")}: {app.applicationNumber}
                     </div>
                     <h3 className="text-base font-bold text-stone-900 dark:text-white mt-0.5">
                       {app.scholarshipTitle}
@@ -277,15 +270,14 @@ export default function StudentDashboard() {
 
                   <div className="text-right">
                     <div className="text-xs font-bold text-stone-900 dark:text-white">
-                      Sanction Value: ₹{app.scholarshipAmount?.toLocaleString() || "28,000"}
+                      {t("sanctionVal")}: ₹{app.scholarshipAmount?.toLocaleString() || "28,000"}
                     </div>
                     <div className="text-[11px] text-stone-500">
-                      OCR Confidence: {((app.ocrConfidenceScore || 0.95) * 100).toFixed(1)}%
+                      {t("ocrConfidence")}: {((app.ocrConfidenceScore || 0.95) * 100).toFixed(1)}%
                     </div>
                   </div>
                 </div>
 
-                {/* Status Tracker Widget */}
                 <ApplicationTracker
                   status={app.status || "VERIFIED"}
                   ocrVerified={app.ocrVerified ?? true}

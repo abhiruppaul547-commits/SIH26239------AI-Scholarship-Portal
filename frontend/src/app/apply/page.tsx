@@ -17,11 +17,13 @@ import {
 } from "lucide-react";
 import { scholarshipApi, applicationApi, authApi } from "@/lib/api";
 import FileUploader from "@/components/FileUploader";
+import { useLanguage } from "@/lib/i18n";
 
 function ApplyForm() {
   const router = useRouter();
   const searchParams = useSearchParams();
   const initialSchemeId = searchParams.get("schemeId");
+  const { t } = useLanguage();
 
   const [schemes, setSchemes] = useState<any[]>([]);
   const [selectedSchemeId, setSelectedSchemeId] = useState<string>(initialSchemeId || "");
@@ -81,7 +83,6 @@ function ApplyForm() {
       const data = await applicationApi.extractDocWithOcr(file, "CASTE_OR_INCOME");
       setOcrResult(data);
 
-      // Auto-fill fields if returned from AI service
       setFormData((prev) => ({
         ...prev,
         fullName: data.name || prev.fullName,
@@ -91,7 +92,6 @@ function ApplyForm() {
         casteDocFileName: file.name,
       }));
     } catch {
-      // Graceful simulated OCR fallback if gateway service is cold
       const fallbackOcr = {
         success: true,
         documentType: "Jharkhand ST Caste & Income Certificate",
@@ -154,10 +154,10 @@ function ApplyForm() {
           <Sparkles className="h-3.5 w-3.5 text-orange-600" /> SIH26239 Smart Application Pipeline
         </div>
         <h1 className="text-3xl font-extrabold text-stone-900 dark:text-white tracking-tight">
-          Apply for Tribal Scholarship
+          {t("applyPageTitle")}
         </h1>
         <p className="text-xs sm:text-sm text-stone-500 mt-1">
-          Fast, effortless application with Automated AI OCR Verification & Direct Benefit Transfer linkage.
+          {t("applyPageSub")}
         </p>
       </div>
 
@@ -175,13 +175,13 @@ function ApplyForm() {
           </p>
 
           <div className="inline-block bg-white dark:bg-stone-900 border border-emerald-300 dark:border-emerald-800 rounded-2xl px-6 py-3 font-mono font-bold text-emerald-800 dark:text-emerald-300 text-base shadow-xs">
-            Application ID: {submissionSuccess.applicationNumber}
+            {t("appId")}: {submissionSuccess.applicationNumber}
           </div>
 
           <div className="flex flex-wrap items-center justify-center gap-4 pt-4">
             <button
               onClick={() => router.push("/dashboard")}
-              className="flex items-center gap-2 rounded-xl bg-emerald-600 px-6 py-2.5 text-xs font-bold text-white shadow-md hover:bg-emerald-500 transition-colors"
+              className="flex items-center gap-2 rounded-xl bg-emerald-600 px-6 py-2.5 text-xs font-bold text-white shadow-md hover:bg-emerald-500 transition-colors cursor-pointer"
             >
               Track on Dashboard <ArrowRight className="h-4 w-4" />
             </button>
@@ -190,7 +190,7 @@ function ApplyForm() {
                 setSubmissionSuccess(null);
                 setOcrResult(null);
               }}
-              className="rounded-xl border border-stone-300 dark:border-stone-700 bg-white dark:bg-stone-900 px-5 py-2.5 text-xs font-bold text-stone-700 dark:text-stone-300 hover:bg-stone-50 transition-colors"
+              className="rounded-xl border border-stone-300 dark:border-stone-700 bg-white dark:bg-stone-900 px-5 py-2.5 text-xs font-bold text-stone-700 dark:text-stone-300 hover:bg-stone-50 transition-colors cursor-pointer"
             >
               Apply for Another Scheme
             </button>
@@ -204,14 +204,13 @@ function ApplyForm() {
             <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-4">
               <div className="space-y-1.5 max-w-lg">
                 <div className="inline-flex items-center gap-1.5 text-xs font-bold text-orange-600 dark:text-orange-400">
-                  <Sparkles className="h-4 w-4" /> AI OCR Feature
+                  <Sparkles className="h-4 w-4" /> {t("autoFillFeature")}
                 </div>
                 <h3 className="text-lg font-black text-stone-900 dark:text-white">
-                  Auto-Fill from Document
+                  {t("autoFillTitle")}
                 </h3>
                 <p className="text-xs text-stone-600 dark:text-stone-400 leading-relaxed">
-                  Upload a photo or scanned copy of your <strong>Caste or Income Certificate</strong>.
-                  Our FastAPI + OpenCV OCR engine will automatically extract your name, tribal group, and certificate details to fill the form in seconds!
+                  {t("autoFillDesc")}
                 </p>
               </div>
 
@@ -235,11 +234,11 @@ function ApplyForm() {
                 >
                   {isOcrProcessing ? (
                     <>
-                      <RefreshCw className="h-4 w-4 animate-spin" /> Processing OCR...
+                      <RefreshCw className="h-4 w-4 animate-spin" /> {t("autoFillProcessing")}
                     </>
                   ) : (
                     <>
-                      <ScanLine className="h-4 w-4" /> Auto-Fill from Document
+                      <ScanLine className="h-4 w-4" /> {t("autoFillBtn")}
                     </>
                   )}
                 </button>
@@ -252,7 +251,7 @@ function ApplyForm() {
                 <div className="flex items-center justify-between text-xs">
                   <span className="font-bold text-emerald-800 dark:text-emerald-300 flex items-center gap-1.5">
                     <ShieldCheck className="h-4 w-4 text-emerald-600" />
-                    OCR Verification Successful ({((ocrResult.confidence || 0.95) * 100).toFixed(1)}% Confidence)
+                    {t("ocrSuccessBadge")} ({((ocrResult.confidence || 0.95) * 100).toFixed(1)}% Confidence)
                   </span>
                   <span className="text-[11px] text-stone-500 font-mono">
                     Cert: {ocrResult.certificateNumber || "JH-ST-2024-84912"}
@@ -260,19 +259,19 @@ function ApplyForm() {
                 </div>
                 <div className="grid grid-cols-2 sm:grid-cols-4 gap-2 text-xs pt-1">
                   <div className="p-2 rounded-xl bg-stone-50 dark:bg-stone-900">
-                    <span className="text-[10px] text-stone-400 block uppercase">Extracted Name</span>
+                    <span className="text-[10px] text-stone-400 block uppercase">{t("extractedName")}</span>
                     <span className="font-bold text-stone-900 dark:text-white">{ocrResult.name || formData.fullName}</span>
                   </div>
                   <div className="p-2 rounded-xl bg-stone-50 dark:bg-stone-900">
-                    <span className="text-[10px] text-stone-400 block uppercase">Caste Category</span>
+                    <span className="text-[10px] text-stone-400 block uppercase">{t("extractedCategory")}</span>
                     <span className="font-bold text-stone-900 dark:text-white">{ocrResult.casteCategory || "ST"}</span>
                   </div>
                   <div className="p-2 rounded-xl bg-stone-50 dark:bg-stone-900">
-                    <span className="text-[10px] text-stone-400 block uppercase">Tribal Community</span>
+                    <span className="text-[10px] text-stone-400 block uppercase">{t("extractedTribe")}</span>
                     <span className="font-bold text-stone-900 dark:text-white">{ocrResult.tribe || formData.tribeName}</span>
                   </div>
                   <div className="p-2 rounded-xl bg-stone-50 dark:bg-stone-900">
-                    <span className="text-[10px] text-stone-400 block uppercase">Annual Income</span>
+                    <span className="text-[10px] text-stone-400 block uppercase">{t("extractedIncome")}</span>
                     <span className="font-bold text-stone-900 dark:text-white">₹{Number(ocrResult.incomeValue || formData.annualFamilyIncome).toLocaleString()}</span>
                   </div>
                 </div>
@@ -293,12 +292,12 @@ function ApplyForm() {
             <div className="rounded-3xl border border-stone-200/80 dark:border-stone-800 bg-white dark:bg-stone-900 p-6 shadow-xs space-y-4">
               <h3 className="text-sm font-bold text-stone-900 dark:text-white flex items-center gap-2">
                 <FileText className="h-4 w-4 text-orange-600" />
-                1. Select Scholarship Scheme
+                {t("step1Scheme")}
               </h3>
 
               <div className="space-y-2">
                 <label className="text-xs font-semibold text-stone-700 dark:text-stone-300">
-                  Target Scholarship Scheme *
+                  {t("targetScheme")}
                 </label>
                 <select
                   required
@@ -320,12 +319,12 @@ function ApplyForm() {
             <div className="rounded-3xl border border-stone-200/80 dark:border-stone-800 bg-white dark:bg-stone-900 p-6 shadow-xs space-y-4">
               <h3 className="text-sm font-bold text-stone-900 dark:text-white flex items-center gap-2">
                 <Building2 className="h-4 w-4 text-orange-600" />
-                2. Student Demographics & Reservation Category
+                {t("step2Demographics")}
               </h3>
 
               <div className="grid grid-cols-1 sm:grid-cols-2 gap-4 text-xs">
                 <div className="space-y-1">
-                  <label className="font-semibold text-stone-700 dark:text-stone-300">Applicant Full Name *</label>
+                  <label className="font-semibold text-stone-700 dark:text-stone-300">{t("fullName")}</label>
                   <input
                     type="text"
                     required
@@ -336,7 +335,7 @@ function ApplyForm() {
                 </div>
 
                 <div className="space-y-1">
-                  <label className="font-semibold text-stone-700 dark:text-stone-300">Email Address *</label>
+                  <label className="font-semibold text-stone-700 dark:text-stone-300">{t("emailAddr")}</label>
                   <input
                     type="email"
                     required
@@ -347,7 +346,7 @@ function ApplyForm() {
                 </div>
 
                 <div className="space-y-1">
-                  <label className="font-semibold text-stone-700 dark:text-stone-300">Caste Category *</label>
+                  <label className="font-semibold text-stone-700 dark:text-stone-300">{t("casteCat")}</label>
                   <select
                     value={formData.category}
                     onChange={(e) => setFormData({ ...formData, category: e.target.value })}
@@ -360,18 +359,18 @@ function ApplyForm() {
                 </div>
 
                 <div className="space-y-1">
-                  <label className="font-semibold text-stone-700 dark:text-stone-300">Tribal Community *</label>
+                  <label className="font-semibold text-stone-700 dark:text-stone-300">{t("tribalComm")}</label>
                   <input
                     type="text"
                     value={formData.tribeName}
                     onChange={(e) => setFormData({ ...formData, tribeName: e.target.value })}
-                    placeholder="Santhal / Gond / Bhil / Munda"
+                    placeholder="Santhal / Gond / Bhil / Munda / Bodo"
                     className="w-full rounded-xl border border-stone-300 dark:border-stone-700 bg-stone-50 dark:bg-stone-800/50 p-2.5 text-stone-900 dark:text-white outline-hidden focus:border-orange-500"
                   />
                 </div>
 
                 <div className="space-y-1">
-                  <label className="font-semibold text-stone-700 dark:text-stone-300">Annual Family Income (₹) *</label>
+                  <label className="font-semibold text-stone-700 dark:text-stone-300">{t("annualIncome")}</label>
                   <input
                     type="number"
                     required
@@ -382,7 +381,7 @@ function ApplyForm() {
                 </div>
 
                 <div className="space-y-1">
-                  <label className="font-semibold text-stone-700 dark:text-stone-300">Aadhaar Number *</label>
+                  <label className="font-semibold text-stone-700 dark:text-stone-300">{t("aadhaarNo")}</label>
                   <input
                     type="text"
                     value={formData.aadhaarNumber}
@@ -398,12 +397,12 @@ function ApplyForm() {
             <div className="rounded-3xl border border-stone-200/80 dark:border-stone-800 bg-white dark:bg-stone-900 p-6 shadow-xs space-y-4">
               <h3 className="text-sm font-bold text-stone-900 dark:text-white flex items-center gap-2">
                 <Check className="h-4 w-4 text-orange-600" />
-                3. Academic & DBT Bank Details
+                {t("step3Academic")}
               </h3>
 
               <div className="grid grid-cols-1 sm:grid-cols-2 gap-4 text-xs">
                 <div className="space-y-1">
-                  <label className="font-semibold text-stone-700 dark:text-stone-300">Institution / College Name *</label>
+                  <label className="font-semibold text-stone-700 dark:text-stone-300">{t("institutionName")}</label>
                   <input
                     type="text"
                     required
@@ -414,7 +413,7 @@ function ApplyForm() {
                 </div>
 
                 <div className="space-y-1">
-                  <label className="font-semibold text-stone-700 dark:text-stone-300">Course & Branch *</label>
+                  <label className="font-semibold text-stone-700 dark:text-stone-300">{t("courseBranch")}</label>
                   <input
                     type="text"
                     required
@@ -425,7 +424,7 @@ function ApplyForm() {
                 </div>
 
                 <div className="space-y-1">
-                  <label className="font-semibold text-stone-700 dark:text-stone-300">Bank Account Number *</label>
+                  <label className="font-semibold text-stone-700 dark:text-stone-300">{t("bankAccNo")}</label>
                   <input
                     type="text"
                     required
@@ -436,7 +435,7 @@ function ApplyForm() {
                 </div>
 
                 <div className="space-y-1">
-                  <label className="font-semibold text-stone-700 dark:text-stone-300">Bank IFSC Code *</label>
+                  <label className="font-semibold text-stone-700 dark:text-stone-300">{t("bankIfsc")}</label>
                   <input
                     type="text"
                     required
@@ -452,27 +451,27 @@ function ApplyForm() {
             <div className="rounded-3xl border border-stone-200/80 dark:border-stone-800 bg-white dark:bg-stone-900 p-6 shadow-xs space-y-4">
               <h3 className="text-sm font-bold text-stone-900 dark:text-white flex items-center gap-2">
                 <UploadCloud className="h-4 w-4 text-orange-600" />
-                4. Mandatory Verification Documents
+                {t("step4Docs")}
               </h3>
 
               <div className="grid grid-cols-1 sm:grid-cols-3 gap-4">
                 <FileUploader
-                  label="ST Caste Certificate *"
-                  subLabel="Issued by Tahasildar / SDO"
+                  label={t("casteCert")}
+                  subLabel={t("casteCertSub")}
                   onFileSelect={(f) => setFormData({ ...formData, casteDocFileName: f.name })}
                   onOcrTrigger={handleOcrUpload}
                   isProcessingOcr={isOcrProcessing}
                 />
 
                 <FileUploader
-                  label="Family Income Certificate *"
-                  subLabel="Current financial year"
+                  label={t("incomeCert")}
+                  subLabel={t("incomeCertSub")}
                   onFileSelect={(f) => setFormData({ ...formData, incomeDocFileName: f.name })}
                 />
 
                 <FileUploader
-                  label="Academic Marksheet *"
-                  subLabel="Previous year / semester"
+                  label={t("marksheet")}
+                  subLabel={t("marksheetSub")}
                   onFileSelect={(f) => setFormData({ ...formData, marksheetDocFileName: f.name })}
                 />
               </div>
@@ -484,7 +483,7 @@ function ApplyForm() {
               disabled={isSubmitting}
               className="w-full rounded-2xl bg-gradient-to-r from-orange-600 to-amber-600 py-4 text-sm sm:text-base font-bold text-white shadow-xl shadow-orange-600/25 hover:from-orange-500 hover:to-amber-500 disabled:opacity-50 transition-all cursor-pointer active:scale-98"
             >
-              {isSubmitting ? "Submitting Application to Ministry..." : "Submit Scholarship Application"}
+              {isSubmitting ? t("submittingBtn") : t("submitBtn")}
             </button>
           </form>
         </div>

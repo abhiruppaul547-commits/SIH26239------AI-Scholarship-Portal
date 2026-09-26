@@ -11,16 +11,14 @@ import {
   CheckCircle2,
   Calendar,
   Building2,
-  Award,
-  Layers,
   ShieldCheck,
-  TrendingUp,
 } from "lucide-react";
 import { scholarshipApi } from "@/lib/api";
+import { useLanguage } from "@/lib/i18n";
 
 export default function Home() {
   const [schemes, setSchemes] = useState<any[]>([]);
-  const [loading, setLoading] = useState(true);
+  const { t } = useLanguage();
 
   useEffect(() => {
     scholarshipApi
@@ -34,8 +32,7 @@ export default function Home() {
       })
       .catch(() => {
         setFallbackSchemes();
-      })
-      .finally(() => setLoading(false));
+      });
   }, []);
 
   const setFallbackSchemes = () => {
@@ -83,20 +80,18 @@ export default function Home() {
             <div className="lg:col-span-7 space-y-6 text-left">
               <div className="inline-flex items-center gap-2 rounded-full border border-orange-200/80 bg-orange-100/60 dark:bg-orange-950/60 dark:border-orange-800 px-3.5 py-1 text-xs font-semibold text-orange-900 dark:text-orange-300">
                 <Sparkles className="h-3.5 w-3.5 text-orange-600" />
-                Smart India Hackathon • Problem Statement SIH26239
+                {t("heroBadge")}
               </div>
 
               <h1 className="text-4xl sm:text-5xl lg:text-6xl font-extrabold tracking-tight text-stone-900 dark:text-white leading-[1.15]">
-                AI-Enabled Scholarship Portal for{" "}
+                {t("heroTitlePrefix")}
                 <span className="bg-gradient-to-r from-orange-600 via-amber-600 to-amber-700 bg-clip-text text-transparent">
-                  Tribal Students
+                  {t("heroTitleHighlight")}
                 </span>
               </h1>
 
               <p className="text-base sm:text-lg text-stone-600 dark:text-stone-300 max-w-2xl leading-relaxed">
-                Empowering India’s tribal youth with an accessible, barrier-free scholarship experience.
-                Featuring automated <strong>Certificate OCR</strong> for instant auto-fill, an intelligent{" "}
-                <strong>Eligibility Engine</strong>, and multi-lingual <strong>Vernacular AI Guidance</strong>.
+                {t("heroDesc")}
               </p>
 
               {/* CTAs */}
@@ -106,7 +101,7 @@ export default function Home() {
                   className="flex items-center gap-2 rounded-xl bg-gradient-to-r from-orange-600 to-amber-600 px-6 py-3.5 text-sm font-bold text-white shadow-lg shadow-orange-600/25 hover:from-orange-500 hover:to-amber-500 active:scale-95 transition-all"
                 >
                   <ScanLine className="h-4 w-4" />
-                  Auto-Fill Application with OCR
+                  {t("heroCtaAutoFill")}
                   <ArrowRight className="h-4 w-4" />
                 </Link>
 
@@ -115,7 +110,7 @@ export default function Home() {
                   className="flex items-center gap-2 rounded-xl border border-stone-300 dark:border-stone-700 bg-white dark:bg-stone-900 px-6 py-3.5 text-sm font-bold text-stone-800 dark:text-stone-200 hover:bg-stone-50 dark:hover:bg-stone-800 active:scale-95 transition-all"
                 >
                   <Compass className="h-4 w-4 text-orange-600" />
-                  Explore AI Recommendations
+                  {t("heroCtaExplore")}
                 </Link>
               </div>
 
@@ -123,15 +118,15 @@ export default function Home() {
               <div className="grid grid-cols-3 gap-4 pt-6 border-t border-stone-200/80 dark:border-stone-800 text-xs">
                 <div>
                   <div className="font-extrabold text-lg text-orange-600">100%</div>
-                  <div className="text-stone-500 font-medium">Digital OCR Scrutiny</div>
+                  <div className="text-stone-500 font-medium">{t("trustOcr")}</div>
                 </div>
                 <div>
                   <div className="font-extrabold text-lg text-orange-600">₹2.8 Lakh</div>
-                  <div className="text-stone-500 font-medium">Max Annual Stipend</div>
+                  <div className="text-stone-500 font-medium">{t("trustStipend")}</div>
                 </div>
                 <div>
-                  <div className="font-extrabold text-lg text-orange-600">3 Languages</div>
-                  <div className="text-stone-500 font-medium">Hindi • Santhali • English</div>
+                  <div className="font-extrabold text-lg text-orange-600">5</div>
+                  <div className="text-stone-500 font-medium">{t("trustLanguages")}</div>
                 </div>
               </div>
             </div>
@@ -144,10 +139,10 @@ export default function Home() {
                 <div className="flex items-center justify-between pb-4 border-b border-stone-100 dark:border-stone-800">
                   <div className="flex items-center gap-2 font-bold text-sm text-stone-900 dark:text-white">
                     <ShieldCheck className="h-4 w-4 text-emerald-600" />
-                    AI Multi-Service Workflow
+                    {t("workflowTitle")}
                   </div>
                   <span className="text-[11px] font-semibold bg-emerald-100 text-emerald-800 dark:bg-emerald-950 dark:text-emerald-300 px-2 py-0.5 rounded-full">
-                    Live Verified
+                    {t("workflowLive")}
                   </span>
                 </div>
 
@@ -159,10 +154,10 @@ export default function Home() {
                     </div>
                     <div>
                       <div className="font-bold text-stone-900 dark:text-white flex items-center gap-1.5">
-                        <ScanLine className="h-3.5 w-3.5 text-orange-600" /> Certificate OCR Extraction
+                        <ScanLine className="h-3.5 w-3.5 text-orange-600" /> {t("workflowStep1Title")}
                       </div>
                       <p className="text-stone-600 dark:text-stone-400 text-[11px] mt-0.5">
-                        OpenCV filters + Tesseract detect name, caste (ST/Santhal), and income from document photos.
+                        {t("workflowStep1Desc")}
                       </p>
                     </div>
                   </div>
@@ -174,10 +169,10 @@ export default function Home() {
                     </div>
                     <div>
                       <div className="font-bold text-stone-900 dark:text-white flex items-center gap-1.5">
-                        <Compass className="h-3.5 w-3.5 text-amber-600" /> Smart Eligibility Scoring
+                        <Compass className="h-3.5 w-3.5 text-amber-600" /> {t("workflowStep2Title")}
                       </div>
                       <p className="text-stone-600 dark:text-stone-400 text-[11px] mt-0.5">
-                        FastAPI evaluates applicant demographics against Ministry schemes with explainable match scores.
+                        {t("workflowStep2Desc")}
                       </p>
                     </div>
                   </div>
@@ -189,10 +184,10 @@ export default function Home() {
                     </div>
                     <div>
                       <div className="font-bold text-stone-900 dark:text-white flex items-center gap-1.5">
-                        <Bot className="h-3.5 w-3.5 text-orange-600" /> Vernacular Guidance
+                        <Bot className="h-3.5 w-3.5 text-orange-600" /> {t("workflowStep3Title")}
                       </div>
                       <p className="text-stone-600 dark:text-stone-400 text-[11px] mt-0.5">
-                        Instant responses in local dialects answering questions regarding documents and status tracking.
+                        {t("workflowStep3Desc")}
                       </p>
                     </div>
                   </div>
@@ -203,7 +198,7 @@ export default function Home() {
                     href="/register"
                     className="inline-flex items-center gap-1.5 text-xs font-bold text-orange-600 hover:text-orange-700 transition-colors"
                   >
-                    Quick Student & Officer Demo Login <ArrowRight className="h-3 w-3" />
+                    {t("quickDemoLogin")} <ArrowRight className="h-3 w-3" />
                   </Link>
                 </div>
               </div>
@@ -216,11 +211,10 @@ export default function Home() {
       <section className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
         <div className="text-center space-y-3 mb-12">
           <h2 className="text-2xl sm:text-3xl font-extrabold text-stone-900 dark:text-white">
-            Transforming Tribal Scholarship Governance
+            {t("pillarsTitle")}
           </h2>
           <p className="text-sm text-stone-500 max-w-2xl mx-auto">
-            Traditional portals face high rejection rates due to manual data errors and language barriers.
-            Our prototype integrates three intelligent micro-engines to streamline the workflow.
+            {t("pillarsSub")}
           </p>
         </div>
 
@@ -231,14 +225,13 @@ export default function Home() {
               <ScanLine className="h-6 w-6" />
             </div>
             <h3 className="text-base font-bold text-stone-900 dark:text-white">
-              Automated Document OCR
+              {t("pillar1Title")}
             </h3>
             <p className="text-xs text-stone-600 dark:text-stone-400 leading-relaxed">
-              Upload your Caste Certificate or Income Slip. Our OpenCV preprocessing + Tesseract OCR pipeline extracts
-              applicant name, tribe, certificate ID, and annual income to pre-fill the form automatically.
+              {t("pillar1Desc")}
             </p>
             <div className="text-xs font-semibold text-orange-600 flex items-center gap-1">
-              <CheckCircle2 className="h-3.5 w-3.5" /> Eliminates manual clerical errors
+              <CheckCircle2 className="h-3.5 w-3.5" /> {t("pillar1Benefit")}
             </div>
           </div>
 
@@ -248,14 +241,13 @@ export default function Home() {
               <Compass className="h-6 w-6" />
             </div>
             <h3 className="text-base font-bold text-stone-900 dark:text-white">
-              Smart Eligibility Engine
+              {t("pillar2Title")}
             </h3>
             <p className="text-xs text-stone-600 dark:text-stone-400 leading-relaxed">
-              Students do not need to guess which scheme applies to them. Our Python ML recommendation module matches
-              income limits, GPA, academic course, and tribal reservation to compute personalized compatibility scores.
+              {t("pillar2Desc")}
             </p>
             <div className="text-xs font-semibold text-amber-700 dark:text-amber-400 flex items-center gap-1">
-              <CheckCircle2 className="h-3.5 w-3.5" /> Explainable match percentages
+              <CheckCircle2 className="h-3.5 w-3.5" /> {t("pillar2Benefit")}
             </div>
           </div>
 
@@ -265,14 +257,13 @@ export default function Home() {
               <Bot className="h-6 w-6" />
             </div>
             <h3 className="text-base font-bold text-stone-900 dark:text-white">
-              Vernacular NLP Assistant
+              {t("pillar3Title")}
             </h3>
             <p className="text-xs text-stone-600 dark:text-stone-400 leading-relaxed">
-              An interactive multilingual conversational agent answering queries in Hindi, Santhali, and English.
-              Students can ask about required documents, last dates, and disbursement statuses anytime.
+              {t("pillar3Desc")}
             </p>
             <div className="text-xs font-semibold text-orange-600 flex items-center gap-1">
-              <CheckCircle2 className="h-3.5 w-3.5" /> 24/7 Chatbot in bottom corner
+              <CheckCircle2 className="h-3.5 w-3.5" /> {t("pillar3Benefit")}
             </div>
           </div>
         </div>
@@ -283,17 +274,17 @@ export default function Home() {
         <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-4 mb-8">
           <div>
             <h2 className="text-2xl font-extrabold text-stone-900 dark:text-white">
-              Official Ministry Tribal Scholarship Schemes
+              {t("schemesTitle")}
             </h2>
             <p className="text-xs text-stone-500 mt-1">
-              Active schemes for Scheduled Tribe (ST) students across school, college, and postgraduate stages
+              {t("schemesSub")}
             </p>
           </div>
           <Link
             href="/apply"
             className="inline-flex items-center gap-1.5 text-xs font-bold text-orange-600 hover:text-orange-700"
           >
-            Apply Now <ArrowRight className="h-3.5 w-3.5" />
+            {t("navApply")} <ArrowRight className="h-3.5 w-3.5" />
           </Link>
         </div>
 
@@ -309,7 +300,7 @@ export default function Home() {
                     {scheme.category || "Tribal Welfare"}
                   </span>
                   <span className="text-xs font-bold text-emerald-600">
-                    Up to ₹{scheme.scholarshipAmount?.toLocaleString() || "50,000"} / yr
+                    {t("upto")} ₹{scheme.scholarshipAmount?.toLocaleString() || "50,000"} {t("perYear")}
                   </span>
                 </div>
 
@@ -338,7 +329,7 @@ export default function Home() {
                   href={`/apply?schemeId=${scheme.id}`}
                   className="w-full flex items-center justify-center gap-1.5 rounded-xl bg-orange-50 dark:bg-stone-800 text-orange-900 dark:text-orange-200 font-bold py-2 text-xs hover:bg-orange-100 transition-colors"
                 >
-                  Apply with Auto-Fill <ArrowRight className="h-3.5 w-3.5" />
+                  {t("applyWithAutoFill")} <ArrowRight className="h-3.5 w-3.5" />
                 </Link>
               </div>
             </div>
