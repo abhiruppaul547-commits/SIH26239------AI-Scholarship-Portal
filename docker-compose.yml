@@ -1,0 +1,48 @@
+services:
+  frontend:
+    build: 
+      context: ./frontend
+    ports:
+      - "3000:3000"
+    environment:
+      # Client-side browser requests must target the public IP or localhost, not the Docker network name
+      - NEXT_PUBLIC_BACKEND_URL=http://localhost:8080
+      - NEXT_PUBLIC_API_URL=http://localhost:8080/api
+      - NEXT_PUBLIC_AI_URL=http://localhost:8000/api/ai
+    depends_on:
+      - core-backend
+    networks:
+      - app-network
+
+  core-backend:
+    build: 
+      context: ./core-service
+    ports:
+      - "8080:8080"
+    environment:
+      # Internal Docker networking allows Spring Boot to call FastAPI using the service name 'ai-service'
+      - AI_SERVICE_URL=http://ai-service:8000 
+    depends_on:
+      - ai-service
+    networks:
+      - app-network
+
+  ai-service:
+    build: 
+      context: ./ai-service
+    ports:
+      - "8000:8000"
+    environment:
+      - GEMINI_API_KEY=${GEMINI_API_KEY:-AQ.Ab8RN6J0uYPSIEqbgME8kdBdL9aP42JDUpVN73MsLNaNB8YNVA}
+      - GEMINI_MODEL=gemini-3.8-flash
+      - FALLBACK_MODEL=gemini-3.5-flash-lite
+    deploy:
+      resources:
+        limits:
+          memory: 8G # Prevents the deep learning models from consuming all server RAM
+    networks:
+      - app-network
+
+networks:
+  app-network:
+    driver: bridge
