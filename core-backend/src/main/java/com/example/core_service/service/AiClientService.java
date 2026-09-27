@@ -155,4 +155,25 @@ public class AiClientService {
         fallback.put("language", language);
         return fallback;
     }
+
+    public byte[] generateTtsAudio(String text, String language) {
+        String endpoint = aiServiceUrl + "/api/ai/tts";
+        try {
+            Map<String, Object> payload = new HashMap<>();
+            payload.put("text", text);
+            payload.put("language", language != null ? language : "en");
+
+            HttpHeaders headers = new HttpHeaders();
+            headers.setContentType(MediaType.APPLICATION_JSON);
+            HttpEntity<Map<String, Object>> request = new HttpEntity<>(payload, headers);
+
+            ResponseEntity<byte[]> response = restTemplate.postForEntity(endpoint, request, byte[].class);
+            if (response.getStatusCode().is2xxSuccessful() && response.getBody() != null) {
+                return response.getBody();
+            }
+        } catch (Exception e) {
+            log.warn("Failed calling AI TTS at {}: {}", endpoint, e.getMessage());
+        }
+        return null;
+    }
 }

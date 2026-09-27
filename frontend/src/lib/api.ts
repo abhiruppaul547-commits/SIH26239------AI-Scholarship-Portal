@@ -122,36 +122,86 @@ export const applicationApi = {
 // AI Chatbot endpoint
 export const aiApi = {
   chat: async (message: string, language: string = "en") => {
+    // 1. Try Next.js serverless route (/api/ai/chat) which runs directly on Vercel with Gemini
+    try {
+      const res = await axios.post("/api/ai/chat", { message, language }, { timeout: 8000 });
+      if (res.data && res.data.reply) {
+        return res.data;
+      }
+    } catch {}
+
+    // 2. Try Spring Boot Gateway via Ngrok tunnel
     try {
       const res = await api.post("/ai/chat", { message, language });
-      return res.data;
-    } catch {
-      // Fallback direct to FastAPI microservice if spring gateway is not routing chat
-      try {
-        const res = await axios.post("http://localhost:8000/api/ai/chat", { message, language });
+      if (res.data && res.data.reply) {
         return res.data;
-      } catch {
-        return {
-          reply: "Johar! Welcome to the AI Scholarship Portal. Please feel free to ask about documents, eligibility criteria, or scholarship schemes.",
-          suggestions: ["What documents do I need?", "Income limits for ST?", "How does OCR work?"],
-        };
       }
-    }
+    } catch {}
+
+    // 3. Fallback direct to local FastAPI microservice if running on localhost
+    try {
+      const res = await axios.post("http://localhost:8000/api/ai/chat", { message, language }, { timeout: 4000 });
+      if (res.data && res.data.reply) {
+        return res.data;
+      }
+    } catch {}
+
+    return {
+      reply: "Johar! 🙏 As your official AI Scholarship Advisor, I am here to guide you with any question regarding ST scholarships, income eligibility (Post-Matric limit ₹2.5L, Top Class ₹6L), required certificates, or DBT transfers.",
+      suggestions: ["What documents do I need?", "Income limits for ST?", "How does OCR work?"],
+    };
   },
+
   generateSpeechAudio: async (text: string, language: string = "en"): Promise<string | null> => {
+    // 1. Try local/tunnel Spring Boot Gateway
+    const backendUrl = process.env.NEXT_PUBLIC_API_URL || "https://election-lushness-pointed.ngrok-free.dev/api";
+    try {
+      const response = await fetch(`${backendUrl}/ai/tts`, {
+        method: "POST",
+        headers: {
+          "Content-Type": "application/json",
+          "ngrok-skip-browser-warning": "true",
+        },
+        body: JSON.stringify({ text, language }),
+      });
+      if (response.ok && response.status === 200) {
+        const blob = await response.blob();
+        if (blob && blob.size > 100) {
+          return URL.createObjectURL(blob);
+        }
+      }
+    } catch {}
+
+    // 2. Try Next.js serverless route (/api/ai/tts)
+    try {
+      const response = await fetch("/api/ai/tts", {
+        method: "POST",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({ text, language }),
+      });
+      if (response.ok && response.status === 200) {
+        const blob = await response.blob();
+        if (blob && blob.size > 100) {
+          return URL.createObjectURL(blob);
+        }
+      }
+    } catch {}
+
+    // 3. Try direct local FastAPI microservice
     try {
       const response = await fetch("http://localhost:8000/api/ai/tts", {
         method: "POST",
         headers: { "Content-Type": "application/json" },
         body: JSON.stringify({ text, language }),
       });
-      if (response.ok) {
+      if (response.ok && response.status === 200) {
         const blob = await response.blob();
-        return URL.createObjectURL(blob);
+        if (blob && blob.size > 100) {
+          return URL.createObjectURL(blob);
+        }
       }
-      return null;
-    } catch {
-      return null;
-    }
+    } catch {}
+
+    return null;
   },
 };
