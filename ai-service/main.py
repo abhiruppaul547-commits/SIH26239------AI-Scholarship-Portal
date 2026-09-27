@@ -38,6 +38,7 @@ def root():
     }
 
 @app.get("/health")
+@app.get("/api/ai/health")
 def health():
     return {"status": "UP", "models_loaded": True}
 

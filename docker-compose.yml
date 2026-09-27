@@ -1,37 +1,58 @@
 services:
-  frontend:
-    build: 
-      context: ./frontend
+  caddy:
+    image: caddy:alpine
+    restart: unless-stopped
     ports:
-      - "3000:3000"
-    environment:
-      # Client-side browser requests must target the public IP or localhost, not the Docker network name
-      - NEXT_PUBLIC_BACKEND_URL=http://localhost:8080
-      - NEXT_PUBLIC_API_URL=http://localhost:8080/api
-      - NEXT_PUBLIC_AI_URL=http://localhost:8000/api/ai
+      - "80:80"
+      - "443:443"
+    volumes:
+      - ./Caddyfile:/etc/caddy/Caddyfile
+      - caddy_data:/data
+      - caddy_config:/config
+    networks:
+      - app-network
     depends_on:
+      - frontend
       - core-backend
+      - ai-service
+
+  duckdns-updater:
+    image: curlimages/curl:latest
+    restart: unless-stopped
+    environment:
+      - DUCKDNS_TOKEN=${DUCKDNS_TOKEN}
+    command: >
+      sh -c '
+        while true; do
+          echo "Updating DuckDNS IP for sih2639-ps.duckdns.org..."
+          curl -s "https://www.duckdns.org/update?domains=sih2639-ps&token=$${DUCKDNS_TOKEN}&ip="
+          echo ""
+          sleep 300
+        done
+      '
+    networks:
+      - app-network
+
+  frontend:
+    build:
+      context: ./frontend
+    restart: unless-stopped
     networks:
       - app-network
 
   core-backend:
-    build: 
-      context: ./core-service
-    ports:
-      - "8080:8080"
+    build:
+      context: ./core-backend
+    restart: unless-stopped
     environment:
-      # Internal Docker networking allows Spring Boot to call FastAPI using the service name 'ai-service'
-      - AI_SERVICE_URL=http://ai-service:8000 
-    depends_on:
-      - ai-service
+      - AI_SERVICE_URL=http://ai-service:8000
     networks:
       - app-network
 
   ai-service:
-    build: 
+    build:
       context: ./ai-service
-    ports:
-      - "8000:8000"
+    restart: unless-stopped
     environment:
       - GEMINI_API_KEY=${GEMINI_API_KEY:-AQ.Ab8RN6J0uYPSIEqbgME8kdBdL9aP42JDUpVN73MsLNaNB8YNVA}
       - GEMINI_MODEL=gemini-3.8-flash
@@ -39,9 +60,13 @@ services:
     deploy:
       resources:
         limits:
-          memory: 8G # Prevents the deep learning models from consuming all server RAM
+          memory: 8G
     networks:
       - app-network
+
+volumes:
+  caddy_data:
+  caddy_config:
 
 networks:
   app-network:

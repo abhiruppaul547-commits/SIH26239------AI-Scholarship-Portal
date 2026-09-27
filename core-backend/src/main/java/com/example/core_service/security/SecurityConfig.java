@@ -40,6 +40,7 @@ public class SecurityConfig {
                     "/api/auth/**",
                     "/api/scholarships/**",
                     "/api/ai/**",
+                    "/api/core/**",
                     "/h2-console/**",
                     "/error"
                 ).permitAll()
