@@ -5,22 +5,35 @@ import { useEffect, useState } from "react";
 import { GraduationCap, User, LogOut, Shield, Sparkles, Globe, FileText, LayoutDashboard, ChevronDown } from "lucide-react";
 import { authApi } from "@/lib/api";
 import { useLanguage, SUPPORTED_LANGUAGES, Language } from "@/lib/i18n";
+import { useAuth } from "@/context/AuthContext";
 
 export default function Navbar() {
   const [currentUser, setCurrentUser] = useState<any>(null);
   const { language, setLanguage, t } = useLanguage();
   const [isLangOpen, setIsLangOpen] = useState(false);
+  const { user: firebaseUser, logout: firebaseLogout } = useAuth();
 
   useEffect(() => {
     const user = authApi.getCurrentUser();
     setCurrentUser(user);
   }, []);
 
-  const handleLogout = () => {
+  const handleLogout = async () => {
+    try {
+      await firebaseLogout();
+    } catch {}
     authApi.logout();
     setCurrentUser(null);
     window.location.href = "/";
   };
+
+  const activeUser = firebaseUser
+    ? {
+        fullName: firebaseUser.displayName || firebaseUser.email?.split("@")[0] || "Student",
+        email: firebaseUser.email,
+        role: "STUDENT",
+      }
+    : currentUser;
 
   const currentLangObj = SUPPORTED_LANGUAGES.find((l) => l.code === language) || SUPPORTED_LANGUAGES[0];
 
@@ -103,16 +116,16 @@ export default function Navbar() {
             )}
           </div>
 
-          {currentUser ? (
+          {activeUser ? (
             <div className="flex items-center gap-2">
               <Link
-                href={currentUser.role === "ADMIN" ? "/admin-dashboard" : "/dashboard"}
+                href={activeUser.role === "ADMIN" ? "/admin-dashboard" : "/dashboard"}
                 className="flex items-center gap-2 rounded-xl bg-orange-50 dark:bg-stone-900 border border-orange-200/60 dark:border-stone-800 px-3 py-1.5 text-xs font-semibold text-orange-950 dark:text-orange-200 hover:bg-orange-100 transition-colors"
               >
                 <User className="h-4 w-4 text-orange-600" />
                 <div className="text-left hidden sm:block">
-                  <div className="truncate max-w-[120px] font-bold">{currentUser.fullName}</div>
-                  <div className="text-[10px] text-stone-500 uppercase">{currentUser.role}</div>
+                  <div className="truncate max-w-[120px] font-bold">{activeUser.fullName}</div>
+                  <div className="text-[10px] text-stone-500 uppercase">{activeUser.role}</div>
                 </div>
               </Link>
               <button
@@ -126,13 +139,13 @@ export default function Navbar() {
           ) : (
             <div className="flex items-center gap-2">
               <Link
-                href="/register"
+                href="/login"
                 className="rounded-xl border border-stone-300 dark:border-stone-700 px-3.5 py-1.5 text-xs font-semibold text-stone-700 dark:text-stone-300 hover:bg-stone-100 dark:hover:bg-stone-900 transition-colors"
               >
                 {t("navSignIn")}
               </Link>
               <Link
-                href="/register?tab=register"
+                href="/login"
                 className="rounded-xl bg-gradient-to-r from-orange-600 to-amber-600 px-4 py-1.5 text-xs font-semibold text-white shadow-sm hover:from-orange-500 hover:to-amber-500 transition-all"
               >
                 {t("navRegister")}

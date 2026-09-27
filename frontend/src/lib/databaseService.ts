@@ -1,58 +1,60 @@
-import { ref, set, get, child } from "firebase/database";
-import { db } from "./firebase";
+import { database } from "./firebase";
+import { ref, push, set, get } from "firebase/database";
 
-export interface ScholarshipApplicationData {
-  schemeName?: string;
-  schemeId?: string | number;
-  applicantName?: string;
+export interface ScholarshipApplication {
+  id?: string;
+  userId: string;
+  scholarshipId?: string | number;
+  scholarshipTitle?: string;
+  studentName?: string;
+  email?: string;
   category?: string;
-  annualIncome?: number | string;
-  gpa?: number | string;
+  annualIncome?: string | number;
   status?: string;
-  submittedAt?: string | number;
-  updatedAt?: string;
+  submittedAt?: number | string;
   [key: string]: any;
 }
 
 /**
- * Saves or updates a scholarship application for a given user in Firebase Realtime Database
+ * Saves a scholarship application to Firebase Realtime Database
+ * under the user's specific path: applications/{userId}/{applicationId}
  */
-export async function saveApplication(
-  userId: string,
-  data: ScholarshipApplicationData
-): Promise<{ success: boolean; data: any }> {
-  if (!userId) {
-    throw new Error("userId is required to save application");
+export async function saveApplication(userId: string, applicationData: any) {
+  try {
+    const userApplicationsRef = ref(database, `applications/${userId}`);
+    const newAppRef = push(userApplicationsRef);
+    const payload: ScholarshipApplication = {
+      ...applicationData,
+      id: newAppRef.key || undefined,
+      userId,
+      status: applicationData.status || "PENDING_VERIFICATION",
+      submittedAt: Date.now(),
+    };
+    await set(newAppRef, payload);
+    return { success: true, id: newAppRef.key, data: payload };
+  } catch (error: any) {
+    console.error("Error saving application to Firebase RTDB:", error);
+    throw error;
   }
-
-  const appRef = ref(db, `applications/${userId}`);
-  const payload = {
-    ...data,
-    userId,
-    status: data.status || "SUBMITTED",
-    updatedAt: new Date().toISOString(),
-    submittedAt: data.submittedAt || new Date().toISOString(),
-  };
-
-  await set(appRef, payload);
-  return { success: true, data: payload };
 }
 
 /**
- * Retrieves the application status and details for a given user from Firebase Realtime Database
+ * Retrieves all scholarship applications for a given user from Firebase Realtime Database
  */
-export async function getApplicationStatus(
-  userId: string
-): Promise<ScholarshipApplicationData | null> {
-  if (!userId) {
-    return null;
-  }
-
-  const dbRef = ref(db);
-  const snapshot = await get(child(dbRef, `applications/${userId}`));
-  if (snapshot.exists()) {
-    return snapshot.val() as ScholarshipApplicationData;
-  } else {
-    return null;
+export async function getUserApplications(userId: string): Promise<ScholarshipApplication[]> {
+  try {
+    const userAppsRef = ref(database, `applications/${userId}`);
+    const snapshot = await get(userAppsRef);
+    if (snapshot.exists()) {
+      const data = snapshot.val();
+      return Object.keys(data).map((key) => ({
+        id: key,
+        ...data[key],
+      }));
+    }
+    return [];
+  } catch (error: any) {
+    console.error("Error fetching applications from Firebase RTDB:", error);
+    throw error;
   }
 }

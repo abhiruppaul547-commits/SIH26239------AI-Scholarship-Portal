@@ -1,233 +1,198 @@
 # SIH26239 — AI-Enabled Scholarship Management Portal for Tribal Students
 
-[![Live Demo](https://img.shields.io/badge/🚀_Live_Demo-sih2639--ps.duckdns.org-0070f3?style=for-the-badge&logo=googlechrome&logoColor=white)](https://sih2639-ps.duckdns.org)
-[![SSL](https://img.shields.io/badge/SSL-Automated_Let's_Encrypt_via_Caddy-green?style=for-the-badge&logo=caddy&logoColor=white)](https://sih2639-ps.duckdns.org)
-[![Docker](https://img.shields.io/badge/Docker-Compose_Orchestrated-2496ED?style=for-the-badge&logo=docker&logoColor=white)](#-docker-compose-production-deployment)
-[![Firebase](https://img.shields.io/badge/Firebase-RTDB_&_Auth-FFCA28?style=for-the-badge&logo=firebase&logoColor=black)](https://firebase.google.com)
-
-[![Next.js](https://img.shields.io/badge/Next.js-16_Standalone-black?logo=next.js)](https://nextjs.org)
-[![Spring Boot](https://img.shields.io/badge/Spring_Boot-3.3.4_JDK17-6DB33F?logo=springboot&logoColor=white)](https://spring.io)
-[![FastAPI](https://img.shields.io/badge/FastAPI-0.115%2B_Python3.10-009688?logo=fastapi&logoColor=white)](https://fastapi.tiangolo.com)
-[![License: MIT](https://img.shields.io/badge/License-MIT-blue.svg)](LICENSE)
+[![Next.js](https://img.shields.io/badge/Next.js-16-black?style=for-the-badge&logo=next.js)](https://nextjs.org/)
+[![Vercel](https://img.shields.io/badge/Vercel-Deployed-black?style=for-the-badge&logo=vercel)](https://vercel.com/)
+[![Firebase](https://img.shields.io/badge/Firebase-Auth_%26_RTDB-FFA000?style=for-the-badge&logo=firebase)](https://firebase.google.com/)
+[![Spring Boot](https://img.shields.io/badge/Spring_Boot-3.3.4-6DB33F?style=for-the-badge&logo=spring-boot)](https://spring.io/projects/spring-boot)
+[![FastAPI](https://img.shields.io/badge/FastAPI-0.115-009688?style=for-the-badge&logo=fastapi)](https://fastapi.tiangolo.com/)
+[![Ngrok](https://img.shields.io/badge/Ngrok-Tunneled-1F1E38?style=for-the-badge&logo=ngrok)](https://ngrok.com/)
+[![TypeScript](https://img.shields.io/badge/TypeScript-5-3178C6?style=for-the-badge&logo=typescript)](https://www.typescriptlang.org/)
+[![Tailwind CSS](https://img.shields.io/badge/Tailwind_CSS-4-38B2AC?style=for-the-badge&logo=tailwind-css)](https://tailwindcss.com/)
 
 > **Smart India Hackathon (SIH 2026)** • Problem Statement **SIH26239**  
-> An enterprise-grade, distributed AI scholarship and fellowship management platform tailored for the Ministry of Tribal Affairs. Features automatic vernacular dialect guidance, OpenCV/Tesseract document verification, real-time cloud tracking with Firebase RTDB, and zero-exposure Docker container security under Caddy HTTPS.
-
----
-
-### 🚀 **Live Demo**
-Explore the production deployment at:  
-👉 **[https://sih2639-ps.duckdns.org](https://sih2639-ps.duckdns.org)**
-
-- **Fully Automated SSL**: TLS 1.3 certificates provisioned and rotated automatically by Caddy.
-- **Dynamic DNS Integration**: Kept in sync with DuckDNS using a dedicated updater sidecar.
-- **Strict Network Isolation**: No microservice ports are exposed to the public internet; all traffic is securely proxied through Caddy.
+> An AI-powered scholarship and fellowship management portal for Scheduled Tribes featuring vernacular AI guidance, automated document OCR verification, smart eligibility recommendation engine, and cloud real-time tracking.
 
 ---
 
 ## 🏛️ System Architecture
 
+The portal employs a hybrid modern architecture: the Next.js frontend is deployed on **Vercel** with **Firebase** for cloud authentication and Realtime Database, while local **Spring Boot** and **FastAPI** microservices communicate securely across the web via **Ngrok**.
+
 ```mermaid
 flowchart TD
-    subgraph PublicInternet["🌐 Public Internet"]
-        User["👤 Beneficiary Student / Evaluator"]
-        DuckDNS["🦆 DuckDNS Dynamic DNS API"]
+    subgraph Cloud["Cloud Infrastructure (Vercel & Firebase)"]
+        Vercel["Next.js 16 Frontend<br/>(Deployed on Vercel)"]
+        Firebase["Firebase Cloud Platform<br/>• Firebase Authentication (Google OAuth & Email)<br/>• Realtime Database (applications/{userId})"]
     end
 
-    subgraph HostContainerEnvironment["🐳 Docker Swarm / Compose Host"]
-        Caddy["🔒 Caddy Reverse Proxy (Ports 80 & 443)\n• Automated TLS / SSL\n• gzip & zstd compression"]
-        DuckDnsSidecar["🔄 duckdns-updater\n(Curl Cron Loop every 300s)"]
-
-        subgraph AppNetwork["🕸️ Isolated app-network (Bridge)"]
-            Frontend["⚡ frontend:3000\nNext.js Standalone Engine\nReact 19 / Tailwind / Lucide"]
-            CoreBackend["☕ core-backend:8080\nSpring Boot 3.3.4 (JDK 17)\nJPA / Security / Business Logic"]
-            AiService["🧠 ai-service:8000\nFastAPI (Python 3.10-slim)\nOpenCV OCR + Gemini Assistant\n(Mem Limit: 8GB)"]
-        end
+    subgraph Tunnel["Ngrok Edge Gateway"]
+        Ngrok["Ngrok Public Tunnel<br/>https://election-lushness-pointed.ngrok-free.dev<br/>(Header: ngrok-skip-browser-warning: true)"]
     end
 
-    subgraph CloudServices["☁️ External Cloud Services"]
-        Firebase["🔥 Firebase Cloud\n• Google SSO Authentication\n• Realtime Database (RTDB)"]
-        GeminiAPI["✨ Google Gemini AI\nMultimodal & Regional Dialect NLP"]
+    subgraph LocalBackends["Local Machine Microservices"]
+        SpringBoot["Core Backend (Spring Boot 3.3.4)<br/>• Port 8080<br/>• Schemes, Scrutiny, Auth & AI Gateway"]
+        FastAPI["AI Microservice (FastAPI)<br/>• Port 8000<br/>• OpenCV / Tesseract OCR & Vernacular NLP Assistant"]
+        H2DB[("Embedded Database<br/>H2 / PostgreSQL (Relational)")]
     end
 
-    User -->|HTTPS :443| Caddy
-    DuckDnsSidecar -.->|Update IP Token| DuckDNS
-    Caddy -->|"/*"| Frontend
-    Caddy -->|"/api/core/*"| CoreBackend
-    Caddy -->|"/api/ai/*"| AiService
-
-    CoreBackend -->|"http://ai-service:8000"| AiService
-    Frontend -->|"Client Auth & RTDB Sync"| Firebase
-    AiService -->|"Inference & Extraction"| GeminiAPI
+    Vercel -- "Auth & Realtime Sync" --> Firebase
+    Vercel -- "REST API (CORS enabled)" --> Ngrok
+    Ngrok -- "Reverse Proxy" --> SpringBoot
+    SpringBoot -- "Internal HTTP Proxy" --> FastAPI
+    SpringBoot -- "JPA Persistence" --> H2DB
 ```
 
 ---
 
-## 🌟 Key Capabilities & Innovation Highlights
+## 🚀 Key Features
 
-1. **Military-Grade Reverse Proxy & Isolation**:
-   - Zero internal ports (3000, 8080, 8000) are mapped to the host machine.
-   - Caddy manages TLS termination, reverse-proxy routing, and compression on ports `80` and `443`.
-   - Sidecar `duckdns-updater` keeps DNS records accurate under dynamic residential/cloud IPs.
+1. **Firebase Authentication & Cloud Realtime Sync**:
+   - Google OAuth 2.0 & Email/Password authentication via Firebase Auth singleton SDK.
+   - Applications instantly persisted to Firebase Realtime Database (`applications/{userId}/{applicationId}`).
+   - Instant live updates across devices without manual refresh.
 
-2. **Automated Document OCR & Cross-Verification (`ai-service/ocr.py`)**:
-   - Image preprocessing with OpenCV (adaptive thresholding, noise removal, skew correction).
-   - Tesseract OCR extracts tribal community (Santhal, Gond, Bhil, Munda, Oraon), certificate IDs, and annual family income.
-   - 1-click **"Auto-Fill from Document"** reduces form abandonment by 90%.
+2. **Automated Document OCR Verification (`ai-service/ocr.py`)**:
+   - OpenCV image preprocessing (adaptive thresholding, noise removal, Gaussian blur).
+   - Tesseract OCR extracts student name, tribal community (Santhal, Gond, Bhil, Munda, etc.), certificate number, and annual family income.
+   - One-click **"Auto-Fill from Document"** button eliminates manual data entry.
 
-3. **Multilingual Regional Vernacular AI (`ai-service/chatbot.py`)**:
-   - Context-aware chatbot supporting English, हिन्दी (Hindi), संताली (Santhali), and regional dialects.
-   - Natural regional accent Text-To-Speech (TTS) response generation.
+3. **Smart Eligibility & Scoring Engine (`ai-service/recommend.py`)**:
+   - Multi-factor evaluation mapping applicant profile against central tribal scholarship schemes.
+   - Computes financial need and academic merit scores with full criteria explainability.
 
-4. **Real-Time Cloud Persistence (Firebase RTDB)**:
-   - Zero-latency application persistence under `/applications/{userId}`.
-   - Direct integration with Google SSO Authentication via `AuthContext`.
+4. **Vernacular NLP Voice/Chat Assistant (`ai-service/chatbot.py`)**:
+   - Floating assistant supporting multiple vernacular languages: **English**, **हिन्दी (Hindi)**, and **संताली (Santhali)**.
+   - Answers queries regarding documents required, income ceilings, deadlines, and application status.
 
-5. **Ministry Administrative Console (`/admin-dashboard`)**:
-   - Real-time scrutiny console for Tribal Welfare Officers.
-   - Live inspection of OCR confidence metrics, document previews, and one-click sanctioning.
+5. **Ministry Scrutiny & Direct Benefit Transfer (DBT)**:
+   - Administrative review console for Tribal Welfare Officers.
+   - Live scrutiny of OCR confidence scores, certificate validation status, and one-click sanctioning.
 
 ---
 
-## 👥 Evaluator & Demonstration Credentials
+## 🛠️ Tech Stack & Microservices
+
+| Component | Technology | Role | Port / Host |
+|-----------|------------|------|-------------|
+| **Frontend** | Next.js 16 (Turbopack), React 19, TypeScript, Tailwind CSS | Beneficiary UI, Admin Portal, Language Switcher | Vercel / `localhost:3000` |
+| **Cloud DB & Auth** | Firebase (Auth & Realtime Database) | Identity Management & Cloud Application Sync | Cloud (`ai-based-scholarship-portal`) |
+| **Gateway Tunnel** | Ngrok Edge Tunnel | Exposes local backend to public Vercel frontend | `election-lushness-pointed.ngrok-free.dev` |
+| **Core Backend** | Java 17, Spring Boot 3.3.4, Spring Security, JPA | Business Logic, CORS, Schemes & Scrutiny API | `localhost:8080` |
+| **AI Microservice** | Python 3.11+, FastAPI, Uvicorn, OpenCV, Tesseract | OCR Processing, Eligibility Scoring, Vernacular NLP | `localhost:8000` |
+
+---
+
+## ⚡ Quick Start & Local Execution Guide
+
+### Prerequisites
+- **Node.js**: v18.17+ or v20+
+- **Java JDK**: Version 17+ (e.g., Eclipse Adoptium Temurin 17)
+- **Python**: Version 3.10+
+- **Ngrok**: Installed and authenticated
+
+---
+
+### Step 1: Start the AI Microservice (FastAPI)
+```powershell
+cd ai-service
+# Activate virtual environment
+.\venv\Scripts\activate
+# Install dependencies
+pip install -r requirements.txt
+# Start FastAPI server on port 8000
+python -m uvicorn main:app --host 0.0.0.0 --port 8000 --reload
+```
+- Swagger UI Documentation: `http://localhost:8000/docs`
+- Health check: `http://localhost:8000/api/ai/health`
+
+---
+
+### Step 2: Start the Core Backend (Spring Boot)
+```powershell
+cd core-backend
+# Set JAVA_HOME if not configured globally
+$env:JAVA_HOME = "C:\Program Files\Eclipse Adoptium\jdk-17.0.20.101-hotspot"
+# Run Spring Boot
+.\mvnw.cmd spring-boot:run
+```
+- Health check: `http://localhost:8080/api/core/health`
+- H2 Database Console: `http://localhost:8080/h2-console` (JDBC URL: `jdbc:h2:mem:scholarshipdb`)
+
+---
+
+### Step 3: Tunnel Spring Boot with Ngrok
+Tunnel port 8080 using your configured custom domain:
+```powershell
+ngrok http 8080 --domain=election-lushness-pointed.ngrok-free.dev
+```
+
+---
+
+### Step 4: Run the Next.js Frontend
+```powershell
+cd frontend
+# Install dependencies
+npm install
+# Start development server
+npm run dev
+```
+Open `http://localhost:3000` in your browser.
+
+---
+
+## 🌐 Environment Variables Configuration
+
+### `frontend/.env.local`
+```ini
+# Backend API & Ngrok Tunnel
+NEXT_PUBLIC_BACKEND_URL=https://election-lushness-pointed.ngrok-free.dev
+NEXT_PUBLIC_API_URL=https://election-lushness-pointed.ngrok-free.dev/api
+NEXT_PUBLIC_AI_URL=http://localhost:8000/api/ai
+
+# Firebase Cloud Configuration
+NEXT_PUBLIC_FIREBASE_API_KEY=AIzaSyCEFieEA9T8Ijg-U_mxdvchu4xnsrCHWOk
+NEXT_PUBLIC_FIREBASE_AUTH_DOMAIN=ai-based-scholarship-portal.firebaseapp.com
+NEXT_PUBLIC_FIREBASE_PROJECT_ID=ai-based-scholarship-portal
+NEXT_PUBLIC_FIREBASE_DATABASE_URL=https://ai-based-scholarship-portal-default-rtdb.asia-southeast1.firebasedatabase.app
+NEXT_PUBLIC_FIREBASE_STORAGE_BUCKET=ai-based-scholarship-portal.firebasestorage.app
+NEXT_PUBLIC_FIREBASE_MESSAGING_SENDER_ID=335723314161
+NEXT_PUBLIC_FIREBASE_APP_ID=1:335723314161:web:5a8b2cd44dcfbef4e8e250
+```
+
+> **Note on Ngrok Free Tier**: When communicating from the client to the Ngrok URL, ensure the request header `"ngrok-skip-browser-warning": "true"` is included (already configured in `src/lib/api.ts` and `src/app/dashboard/page.tsx`).
+
+---
+
+## 📡 API Endpoints Summary
+
+### Spring Boot Core Backend (`:8080` / Ngrok)
+- `GET /api/core/health` — Microservice health status (`{"status": "ok"}`)
+- `POST /api/auth/login` — Student / Admin JWT authentication
+- `POST /api/auth/register` — Student profile registration
+- `GET /api/scholarships` — List available ST scholarship schemes
+- `GET /api/scholarships/recommended` — Top recommended schemes for current student
+- `POST /api/applications` — Submit scholarship application
+- `GET /api/applications/my-applications` — Fetch logged-in student's applications
+- `GET /api/admin/applications` — Ministry scrutiny application review list
+
+### FastAPI AI Microservice (`:8000`)
+- `GET /api/ai/health` — AI service status (`{"status": "ok", "models_loaded": true}`)
+- `POST /api/ai/extract-doc` — OCR extraction from income/caste certificate images
+- `POST /api/ai/recommend` — Weighted scholarship eligibility scoring
+- `POST /api/ai/chat` — Vernacular NLP conversational assistant
+- `POST /api/ai/tts` — Regional voice audio synthesis
+
+---
+
+## 👥 Evaluator Credentials
 
 | Role | Email | Password | Access Details |
 |------|-------|----------|----------------|
-| **Tribal Beneficiary** | `student@sih.gov.in` | `student123` | Pre-verified Santhal ST Student profile |
-| **Ministry Admin** | `admin@sih.gov.in` | `admin123` | Scrutiny and DBT Approval Console |
-| **Google SSO** | *Any Google Account* | *Google Sign-In* | Instant student registration via Firebase |
+| **Tribal Beneficiary** | `student@sih.gov.in` | `student123` | Direct Beneficiary Portal & Live Tracker |
+| **Ministry Admin** | `admin@sih.gov.in` | `admin123` | Administrative Scrutiny & DBT Verification |
 
 ---
 
-## 🐳 Docker Compose Production Deployment
-
-The entire multi-tier stack can be built and deployed with a single command.
-
-### 1. Prerequisites
-- Docker Engine 24.0+ & Docker Compose v2.20+
-- Linux (Ubuntu/Debian recommended) or Windows with WSL2
-
-### 2. Configure Environment Variables
-Create or verify the root `.env` file:
-```env
-DUCKDNS_TOKEN=6a8aa58c-0cfe-4b1f-b7f1-db4108604d2f
-GEMINI_API_KEY=your_gemini_api_key_here
-```
-
-### 3. Open Host Firewall Ports
-On Linux systems, allow incoming traffic on ports 80 and 443:
-```bash
-chmod +x scripts/setup-firewall.sh
-sudo ./scripts/setup-firewall.sh
-```
-
-### 4. Launch All Services (Production Build)
-```bash
-docker compose up -d --build
-```
-
-### 5. Inspect Service Health & Caddy Logs
-Verify that Caddy acquires the Let's Encrypt certificate:
-```bash
-docker compose logs -f caddy
-```
-To check container status:
-```bash
-docker compose ps
-```
-
-### 6. Verify Health Endpoints
-- Public Core Backend Health: `https://sih2639-ps.duckdns.org/api/core/health`
-- Public AI Microservice Health: `https://sih2639-ps.duckdns.org/api/ai/health`
-- Frontend Portal: `https://sih2639-ps.duckdns.org`
-
-### 7. Stopping the Services
-```bash
-docker compose down
-```
-
----
-
-## 💻 Local Development (Without Docker)
-
-For local development across all 3 microservices simultaneously:
-
-```powershell
-# Automated PowerShell launch
-.\start-all.ps1
-```
-
-Or manually:
-
-```bash
-# 1. AI Service
-cd ai-service
-python -m venv venv
-source venv/bin/activate  # Or .\venv\Scripts\activate on Windows
-pip install -r requirements.txt
-uvicorn main:app --host 0.0.0.0 --port 8000 --reload
-
-# 2. Core Backend
-cd core-backend
-./mvnw clean spring-boot:run
-
-# 3. Next.js Frontend
-cd frontend
-npm install
-npm run dev
-```
-
----
-
-## 📂 Project Directory Structure
-
-```
-SIH26239------AI-Scholarship-Portal/
-├── Caddyfile                   # Caddy SSL Reverse Proxy routing configuration
-├── docker-compose.yml          # Multi-container orchestration (Caddy, DuckDNS, Core, AI, Web)
-├── .env                        # Production tokens & API keys (Git-ignored)
-├── god-mode.md                 # Automated CI/CD deployment blueprint
-├── scripts/
-│   ├── setup-firewall.sh       # Linux iptables firewall configuration
-│   └── launch.sh               # Production build & launch script
-│
-├── core-backend/               # Spring Boot 3.3.4 (JDK 17) Microservice (Port 8080)
-│   ├── src/main/java/com/example/core_service/
-│   │   ├── controller/         # Health, Auth, Scholarship, Application, AI Gateway
-│   │   ├── model/              # User, StudentProfile, ScholarshipScheme, Application
-│   │   ├── repository/         # Spring Data JPA Repositories
-│   │   ├── security/           # JWT Security & Route Permissions
-│   │   └── service/            # Business logic & AI client integrations
-│   ├── Dockerfile              # Multi-stage Maven / Eclipse Temurin 17 Dockerfile
-│   └── pom.xml
-│
-├── ai-service/                 # FastAPI Python 3.10 Microservice (Port 8000)
-│   ├── ocr.py                  # OpenCV + Tesseract image parsing engine
-│   ├── recommend.py            # Financial & academic eligibility scoring
-│   ├── chatbot.py              # Vernacular NLP assistant with regional accent TTS
-│   ├── main.py                 # FastAPI routing & CORS configuration
-│   ├── Dockerfile              # Python 3.10-slim Dockerfile with Tesseract & OpenCV
-│   └── requirements.txt
-│
-└── frontend/                   # Next.js 16 Standalone Frontend (Port 3000)
-    ├── src/app/
-    │   ├── page.tsx            # Portal landing & showcase page
-    │   ├── login/page.tsx      # Google SSO Authentication page
-    │   ├── dashboard/page.tsx  # Protected Beneficiary Dashboard with RTDB Form
-    │   ├── apply/page.tsx      # Application wizard with Document Auto-Fill
-    │   ├── admin-dashboard/    # Ministry Scrutiny & Sanctioning Console
-    │   └── layout.tsx          # Root Layout wrapped with AuthProvider & i18n
-    ├── src/context/
-    │   └── AuthContext.tsx     # Firebase Auth context & Google SSO hook
-    ├── src/lib/
-    │   ├── firebase.ts         # Firebase App, Auth & RTDB initialization
-    │   ├── databaseService.ts  # RTDB read/write service (saveApplication)
-    │   └── i18n.tsx            # Multi-lingual regional localization
-    ├── Dockerfile              # Multi-stage standalone Node.js 18 Dockerfile
-    └── next.config.ts          # Configured with output: 'standalone'
-```
-
----
-
-## 📜 License
-Distributed under the MIT License. See [LICENSE](LICENSE) for more information.
+## 📄 License
+This prototype is developed for the **Smart India Hackathon (SIH 2026)** under the Ministry of Tribal Affairs problem statement **SIH26239**.
+All rights reserved © 2026.

@@ -8,7 +8,7 @@ Start-Process powershell -ArgumentList "-NoExit", "-Command", "cd ai-service; .\
 
 # 2. Start Core Backend (Spring Boot - Port 8080)
 Write-Host "[2/3] Starting Core Backend (Spring Boot: http://localhost:8080)..." -ForegroundColor Green
-Start-Process powershell -ArgumentList "-NoExit", "-Command", "cd core-backend; `$env:JAVA_HOME = 'C:\Program Files\Eclipse Adoptium\jdk-17.0.20.101-hotspot'; `$env:Path = `"`$env:JAVA_HOME\bin;`" + `$env:Path; .\mvnw.cmd spring-boot:run"
+Start-Process powershell -ArgumentList "-NoExit", "-Command", "cd core-service; `$env:JAVA_HOME = 'C:\Program Files\Eclipse Adoptium\jdk-17.0.20.101-hotspot'; `$env:Path = `"`$env:JAVA_HOME\bin;`" + `$env:Path; .\mvnw.cmd spring-boot:run"
 
 # 3. Start Frontend (Next.js - Port 3000)
 Write-Host "[3/3] Starting Frontend (Next.js: http://localhost:3000)..." -ForegroundColor Green

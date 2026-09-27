@@ -40,7 +40,7 @@ def root():
 @app.get("/health")
 @app.get("/api/ai/health")
 def health():
-    return {"status": "UP", "models_loaded": True}
+    return {"status": "ok", "models_loaded": True}
 
 if __name__ == "__main__":
     import uvicorn
