@@ -192,15 +192,6 @@ export default function Home() {
                     </div>
                   </div>
                 </div>
-
-                <div className="pt-2 text-center">
-                  <Link
-                    href="/register"
-                    className="inline-flex items-center gap-1.5 text-xs font-bold text-orange-600 hover:text-orange-700 transition-colors"
-                  >
-                    {t("quickDemoLogin")} <ArrowRight className="h-3 w-3" />
-                  </Link>
-                </div>
               </div>
             </div>
           </div>

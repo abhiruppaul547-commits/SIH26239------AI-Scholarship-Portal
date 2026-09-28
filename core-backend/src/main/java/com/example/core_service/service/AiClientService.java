@@ -56,19 +56,12 @@ public class AiClientService {
             log.warn("Failed calling AI OCR service at {}, applying resilient fallback parser: {}", endpoint, e.getMessage());
         }
 
-        // Resilient fallback if AI service is offline or starting
+        // If AI service is offline or uncontactable, return unverified state without fake demo names
         OcrExtractionResponse fallback = new OcrExtractionResponse();
-        fallback.setSuccess(true);
+        fallback.setSuccess(false);
         fallback.setDocumentType(docType != null ? docType : "Caste / Income Certificate");
-        fallback.setName("Abhishek Murmu");
-        fallback.setCasteCategory("ST");
-        fallback.setTribe("Santhal");
-        fallback.setIncomeValue(120000.0);
-        fallback.setCertificateNumber("JH-TRB-2024-" + System.currentTimeMillis() % 100000);
-        fallback.setIssueDate("2024-05-15");
-        fallback.setIssuingAuthority("Sub-Divisional Officer (Revenue), Dumka");
-        fallback.setConfidence(0.92);
-        fallback.setRawText("GOVERNMENT OF JHARKHAND - TRIBAL WELFARE DEPT. CASTE & INCOME CERTIFICATE");
+        fallback.setConfidence(0.0);
+        fallback.setRawText("Document received: " + (file.getOriginalFilename() != null ? file.getOriginalFilename() : "document") + ". OCR service was temporarily unavailable.");
         return fallback;
     }
 

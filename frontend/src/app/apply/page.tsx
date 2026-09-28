@@ -81,37 +81,25 @@ function ApplyForm() {
     setErrorMsg("");
     try {
       const data = await applicationApi.extractDocWithOcr(file, "CASTE_OR_INCOME");
+      if (!data || !data.success) {
+        throw new Error(data?.message || "Could not extract legible text from this document.");
+      }
       setOcrResult(data);
 
       setFormData((prev) => ({
         ...prev,
-        fullName: data.name || prev.fullName,
+        fullName: data.name || data.fullName || prev.fullName,
         category: data.casteCategory || prev.category,
-        tribeName: data.tribe || prev.tribeName,
+        tribeName: data.tribe || data.tribeName || prev.tribeName,
         annualFamilyIncome: data.incomeValue ? data.incomeValue.toString() : prev.annualFamilyIncome,
         casteDocFileName: file.name,
       }));
-    } catch {
-      const fallbackOcr = {
-        success: true,
-        documentType: "Jharkhand ST Caste & Income Certificate",
-        name: "Birsa Soren",
-        casteCategory: "ST",
-        tribe: "Santhal",
-        incomeValue: 120000.0,
-        certificateNumber: "JH-ST-2024-84912",
-        confidence: 0.965,
-        rawText: "GOVERNMENT OF JHARKHAND. TRIBAL CERTIFICATE. This is to certify that Birsa Soren belongs to Santhal ST community. Annual income: Rs. 1,20,000.",
-      };
-      setOcrResult(fallbackOcr);
-      setFormData((prev) => ({
-        ...prev,
-        fullName: fallbackOcr.name,
-        category: fallbackOcr.casteCategory,
-        tribeName: fallbackOcr.tribe,
-        annualFamilyIncome: fallbackOcr.incomeValue.toString(),
-        casteDocFileName: file.name,
-      }));
+    } catch (err: any) {
+      setErrorMsg(
+        err.response?.data?.message ||
+        err.message ||
+        "Could not automatically extract details from this document. Please ensure the image is clear or fill in the details manually."
+      );
     } finally {
       setIsOcrProcessing(false);
     }
@@ -253,26 +241,38 @@ function ApplyForm() {
                     <ShieldCheck className="h-4 w-4 text-emerald-600" />
                     {t("ocrSuccessBadge")} ({((ocrResult.confidence || 0.95) * 100).toFixed(1)}% Confidence)
                   </span>
-                  <span className="text-[11px] text-stone-500 font-mono">
-                    Cert: {ocrResult.certificateNumber || "JH-ST-2024-84912"}
-                  </span>
+                  {ocrResult.certificateNumber ? (
+                    <span className="text-[11px] text-stone-500 font-mono">
+                      Cert: {ocrResult.certificateNumber}
+                    </span>
+                  ) : (
+                    <span className="text-[11px] text-emerald-600 font-medium">
+                      Verified from Document
+                    </span>
+                  )}
                 </div>
                 <div className="grid grid-cols-2 sm:grid-cols-4 gap-2 text-xs pt-1">
                   <div className="p-2 rounded-xl bg-stone-50 dark:bg-stone-900">
                     <span className="text-[10px] text-stone-400 block uppercase">{t("extractedName")}</span>
-                    <span className="font-bold text-stone-900 dark:text-white">{ocrResult.name || formData.fullName}</span>
+                    <span className="font-bold text-stone-900 dark:text-white">{ocrResult.name || formData.fullName || "—"}</span>
                   </div>
                   <div className="p-2 rounded-xl bg-stone-50 dark:bg-stone-900">
                     <span className="text-[10px] text-stone-400 block uppercase">{t("extractedCategory")}</span>
-                    <span className="font-bold text-stone-900 dark:text-white">{ocrResult.casteCategory || "ST"}</span>
+                    <span className="font-bold text-stone-900 dark:text-white">{ocrResult.casteCategory || formData.category || "ST"}</span>
                   </div>
                   <div className="p-2 rounded-xl bg-stone-50 dark:bg-stone-900">
                     <span className="text-[10px] text-stone-400 block uppercase">{t("extractedTribe")}</span>
-                    <span className="font-bold text-stone-900 dark:text-white">{ocrResult.tribe || formData.tribeName}</span>
+                    <span className="font-bold text-stone-900 dark:text-white">{ocrResult.tribe || formData.tribeName || "—"}</span>
                   </div>
                   <div className="p-2 rounded-xl bg-stone-50 dark:bg-stone-900">
                     <span className="text-[10px] text-stone-400 block uppercase">{t("extractedIncome")}</span>
-                    <span className="font-bold text-stone-900 dark:text-white">₹{Number(ocrResult.incomeValue || formData.annualFamilyIncome).toLocaleString()}</span>
+                    <span className="font-bold text-stone-900 dark:text-white">
+                      {ocrResult.incomeValue
+                        ? `₹${Number(ocrResult.incomeValue).toLocaleString()}`
+                        : formData.annualFamilyIncome
+                        ? `₹${Number(formData.annualFamilyIncome).toLocaleString()}`
+                        : "—"}
+                    </span>
                   </div>
                 </div>
               </div>

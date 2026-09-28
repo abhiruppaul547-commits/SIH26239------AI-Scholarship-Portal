@@ -129,19 +129,51 @@ def parse_extracted_text(text: str, filename: str = "", doc_type: Optional[str] 
     else:
         extracted["issuing_authority"] = "Sub-Divisional Officer (Revenue)"
 
-    # Default fallback values for demo mock uploads if documents are photos without standard text
-    if not extracted["name"]:
-        extracted["name"] = "Birsa Soren"
-    if not extracted["tribe"]:
-        extracted["tribe"] = "Santhal"
-    if not extracted["income_value"]:
-        extracted["income_value"] = 120000.0
-    if not extracted["certificate_number"]:
-        extracted["certificate_number"] = "JH-ST-2024-84912"
-    if not extracted["issue_date"]:
-        extracted["issue_date"] = "15/04/2024"
-
     return extracted
+
+def extract_with_gemini_vision(contents: bytes, mime_type: str = "image/jpeg", doc_type: Optional[str] = None) -> Optional[dict]:
+    """Call Gemini Vision API to accurately extract real certificate fields from actual uploaded documents."""
+    import os
+    import base64
+    import requests
+    import json
+
+    api_key = os.getenv("GEMINI_API_KEY")
+    if not api_key:
+        return None
+
+    models = ["gemini-3.6-flash", "gemini-3.5-flash-lite", "gemini-3.8-flash"]
+    b64_data = base64.b64encode(contents).decode("utf-8")
+
+    prompt = (
+        "Extract all real information from this official government certificate/document (Caste, Tribe, Income, Marksheet, or ID).\n"
+        "Return strictly a JSON object with keys: {\"name\": str or null, \"caste_category\": str (e.g. ST/SC/OBC) or null, "
+        "\"tribe\": str or null, \"income_value\": float or null, \"certificate_number\": str or null, "
+        "\"issue_date\": str or null, \"issuing_authority\": str or null, \"raw_text\": str, \"confidence\": float}.\n"
+        "Do NOT invent or hallucinate data. If a field is missing, set it to null."
+    )
+
+    for model in models:
+        try:
+            url = f"https://generativelanguage.googleapis.com/v1beta/models/{model}:generateContent?key={api_key}"
+            payload = {
+                "contents": [{
+                    "parts": [
+                        {"inline_data": {"mime_type": mime_type, "data": b64_data}},
+                        {"text": prompt}
+                    ]
+                }],
+                "generationConfig": {"temperature": 0.1, "response_mime_type": "application/json"}
+            }
+            res = requests.post(url, json=payload, timeout=25)
+            if res.status_code == 200:
+                data = res.json()
+                raw_cand = data.get("candidates", [{}])[0].get("content", {}).get("parts", [{}])[0].get("text", "")
+                if raw_cand:
+                    return json.loads(raw_cand)
+        except Exception:
+            continue
+    return None
 
 @router.post("/extract-doc", response_model=OcrResponse)
 async def extract_document(
@@ -149,45 +181,57 @@ async def extract_document(
     document_type: Optional[str] = Form(None)
 ):
     """
-    Accepts multipart image/pdf document, runs OpenCV preprocessing and OCR extraction,
-    and returns structured scholarship verification fields.
+    Accepts multipart image/pdf document, runs Gemini Vision or OpenCV+Tesseract OCR extraction,
+    and returns structured scholarship verification fields from the actual document.
     """
     contents = await file.read()
     raw_text = ""
-    confidence = 0.94
+    confidence = 0.95
 
+    mime_type = file.content_type or ("application/pdf" if file.filename and file.filename.endswith(".pdf") else "image/jpeg")
+
+    # 1. Primary: Gemini Vision for highly accurate real document information extraction
+    gemini_data = extract_with_gemini_vision(contents, mime_type, document_type)
+    if gemini_data:
+        doc_label = document_type if document_type else ("Caste Certificate" if "caste" in (file.filename or "").lower() else "Certificate")
+        return OcrResponse(
+            success=True,
+            document_type=doc_label,
+            name=gemini_data.get("name"),
+            caste_category=gemini_data.get("caste_category") or "ST",
+            tribe=gemini_data.get("tribe"),
+            income_value=gemini_data.get("income_value"),
+            certificate_number=gemini_data.get("certificate_number"),
+            issue_date=gemini_data.get("issue_date"),
+            issuing_authority=gemini_data.get("issuing_authority"),
+            confidence=gemini_data.get("confidence", 0.98),
+            raw_text=gemini_data.get("raw_text", ""),
+            metadata={"filename": file.filename, "size_bytes": len(contents), "engine": "Gemini Vision"}
+        )
+
+    # 2. Secondary: Tesseract & OpenCV
     try:
         if pytesseract:
             processed_img = preprocess_image(contents)
             raw_text = pytesseract.image_to_string(processed_img)
-            confidence = 0.96
+            confidence = 0.92
     except Exception:
-        # Fallback if tesseract system binary is not locally in PATH
-        raw_text = "GOVERNMENT OF JHARKHAND - TRIBAL WELFARE DEPARTMENT. Caste & Income Certificate for Scheduled Tribe (ST) Community."
-
-    if not raw_text.strip():
-        raw_text = (
-            f"GOVERNMENT OF JHARKHAND. TRIBAL CERTIFICATE.\n"
-            f"This is to certify that Birsa Soren, S/o Somra Soren, belongs to the Santhal Scheduled Tribe community.\n"
-            f"Total Annual Family Income: Rs. 1,20,000/- only.\n"
-            f"Certificate No: JH-ST-2024-84912. Date: 15/04/2024. Issuing Authority: Sub-Divisional Officer (Revenue), Ranchi."
-        )
+        raw_text = ""
 
     parsed = parse_extracted_text(raw_text, filename=file.filename or "", doc_type=document_type)
-
-    doc_label = document_type if document_type else ("Caste Certificate" if "caste" in (file.filename or "").lower() else "Income Certificate")
+    doc_label = document_type if document_type else ("Caste Certificate" if "caste" in (file.filename or "").lower() else "Certificate")
 
     return OcrResponse(
-        success=True,
+        success=bool(parsed.get("name") or parsed.get("certificate_number") or raw_text.strip()),
         document_type=doc_label,
-        name=parsed["name"],
-        caste_category=parsed["caste_category"],
-        tribe=parsed["tribe"],
-        income_value=parsed["income_value"],
-        certificate_number=parsed["certificate_number"],
-        issue_date=parsed["issue_date"],
-        issuing_authority=parsed["issuing_authority"],
-        confidence=confidence,
+        name=parsed.get("name"),
+        caste_category=parsed.get("caste_category", "ST"),
+        tribe=parsed.get("tribe"),
+        income_value=parsed.get("income_value"),
+        certificate_number=parsed.get("certificate_number"),
+        issue_date=parsed.get("issue_date"),
+        issuing_authority=parsed.get("issuing_authority"),
+        confidence=confidence if raw_text.strip() else 0.0,
         raw_text=raw_text.strip(),
-        metadata={"filename": file.filename, "size_bytes": len(contents)}
+        metadata={"filename": file.filename, "size_bytes": len(contents), "engine": "Tesseract+OpenCV"}
     )

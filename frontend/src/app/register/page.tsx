@@ -68,17 +68,6 @@ function AuthForm() {
     }
   };
 
-  const fillDemoStudent = () => {
-    setLoginEmail("student@sih.gov.in");
-    setLoginPassword("student123");
-    setTab("login");
-  };
-
-  const fillDemoAdmin = () => {
-    setLoginEmail("admin@sih.gov.in");
-    setLoginPassword("admin123");
-    setTab("login");
-  };
 
   return (
     <div className="min-h-[85vh] flex items-center justify-center px-4 py-12">
@@ -94,31 +83,6 @@ function AuthForm() {
           <p className="text-xs text-stone-500">
             {t("loginSub")}
           </p>
-        </div>
-
-        {/* Demo Quick-Fill Buttons for SIH Evaluators */}
-        <div className="rounded-2xl border border-orange-200/80 dark:border-stone-800 bg-orange-50/70 dark:bg-stone-900 p-3.5 space-y-2 text-xs">
-          <div className="flex items-center gap-1.5 font-bold text-orange-900 dark:text-orange-300 text-[11px]">
-            <Sparkles className="h-3.5 w-3.5 text-orange-600" /> {t("evaluatorQuickAccess")}
-          </div>
-          <div className="grid grid-cols-1 sm:grid-cols-2 gap-2">
-            <button
-              type="button"
-              onClick={fillDemoStudent}
-              className="text-left p-2 rounded-xl bg-white dark:bg-stone-800 border border-orange-200/60 dark:border-stone-700 hover:border-orange-400 transition-all cursor-pointer"
-            >
-              <div className="font-bold text-stone-900 dark:text-white">{t("demoStudent")}</div>
-              <div className="text-[10px] text-stone-500">{t("demoStudentDesc")}</div>
-            </button>
-            <button
-              type="button"
-              onClick={fillDemoAdmin}
-              className="text-left p-2 rounded-xl bg-white dark:bg-stone-800 border border-orange-200/60 dark:border-stone-700 hover:border-orange-400 transition-all cursor-pointer"
-            >
-              <div className="font-bold text-stone-900 dark:text-white">{t("demoOfficer")}</div>
-              <div className="text-[10px] text-stone-500">{t("demoOfficerDesc")}</div>
-            </button>
-          </div>
         </div>
 
         {/* Main Card */}
