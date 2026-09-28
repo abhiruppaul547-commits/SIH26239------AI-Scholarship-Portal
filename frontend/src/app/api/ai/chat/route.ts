@@ -1,5 +1,6 @@
 import { NextResponse } from "next/server";
 import { getCleanFirstName } from "@/lib/nameUtils";
+import { getSmartFallbackResponse } from "@/lib/aiFallback";
 
 const SYSTEM_INSTRUCTION = `
 You are an advanced, world-class intelligent AI Assistant powered by Google Gemini, serving as the official AI Vernacular Scholarship & Education Advisor for the Ministry of Tribal Affairs (SIH26239 - AI-Enabled Scholarship Management System for Tribal Students).
@@ -140,64 +141,17 @@ User Question: ${message}
 
 End with: SUGGESTIONS: <Question 1 in ${targetName}> | <Question 2 in ${targetName}> | <Question 3 in ${targetName}>`;
 
-    // Cascade through high-availability Gemini models
+    // Cascade through high-availability Gemini models (fastest first)
     const candidateModels = [
       "gemini-3.5-flash-lite",
+      "gemini-flash-lite-latest",
       "gemini-3.6-flash",
       "gemini-3.8-flash",
-      "gemini-flash-lite-latest",
     ];
 
     if (apiKey) {
       for (const model of candidateModels) {
-        // Strategy A: Interactions API
-        try {
-          const resInteractions = await fetch(
-            `https://generativelanguage.googleapis.com/v1beta/interactions?key=${apiKey}`,
-            {
-              method: "POST",
-              headers: { "Content-Type": "application/json" },
-              body: JSON.stringify({
-                model,
-                system_instruction: SYSTEM_INSTRUCTION,
-                input: promptInput,
-                store: false,
-              }),
-            }
-          );
-
-          if (resInteractions.ok) {
-            const data = await resInteractions.json();
-            let replyText = extractTextFromGeminiResponse(data);
-
-            if (replyText) {
-              let suggestions: string[] = [];
-              if (replyText.includes("SUGGESTIONS:")) {
-                const parts = replyText.split("SUGGESTIONS:");
-                replyText = parts[0].trim();
-                suggestions = parts[1]
-                  .split("|")
-                  .map((s: string) => s.trim())
-                  .filter(Boolean);
-              }
-
-              return NextResponse.json({
-                success: true,
-                reply: replyText,
-                language: activeLang,
-                intent: `LLM_${model.toUpperCase().replace(/[-.]/g, "_")}`,
-                suggestions:
-                  suggestions.length > 0
-                    ? suggestions
-                    : ["What documents are required?", "Income limit for ST?", "How does Auto-Fill work?"],
-              });
-            }
-          }
-        } catch (err) {
-          console.warn(`Interactions API with ${model} warning:`, err);
-        }
-
-        // Strategy B: Standard generateContent API
+        // Strategy 1: Standard generateContent API (fastest, high reliability)
         try {
           const resGenerate = await fetch(
             `https://generativelanguage.googleapis.com/v1beta/models/${model}:generateContent?key=${apiKey}`,
@@ -219,6 +173,7 @@ End with: SUGGESTIONS: <Question 1 in ${targetName}> | <Question 2 in ${targetNa
                   maxOutputTokens: 2048,
                 },
               }),
+              signal: AbortSignal.timeout(8500),
             }
           );
 
@@ -252,28 +207,66 @@ End with: SUGGESTIONS: <Question 1 in ${targetName}> | <Question 2 in ${targetNa
         } catch (err) {
           console.warn(`GenerateContent API with ${model} warning:`, err);
         }
+
+        // Strategy 2: Interactions API fallback
+        try {
+          const resInteractions = await fetch(
+            `https://generativelanguage.googleapis.com/v1beta/interactions?key=${apiKey}`,
+            {
+              method: "POST",
+              headers: { "Content-Type": "application/json" },
+              body: JSON.stringify({
+                model,
+                system_instruction: SYSTEM_INSTRUCTION,
+                input: promptInput,
+                store: false,
+              }),
+              signal: AbortSignal.timeout(7000),
+            }
+          );
+
+          if (resInteractions.ok) {
+            const data = await resInteractions.json();
+            let replyText = extractTextFromGeminiResponse(data);
+
+            if (replyText) {
+              let suggestions: string[] = [];
+              if (replyText.includes("SUGGESTIONS:")) {
+                const parts = replyText.split("SUGGESTIONS:");
+                replyText = parts[0].trim();
+                suggestions = parts[1]
+                  .split("|")
+                  .map((s: string) => s.trim())
+                  .filter(Boolean);
+              }
+
+              return NextResponse.json({
+                success: true,
+                reply: replyText,
+                language: activeLang,
+                intent: `INTERACTIONS_${model.toUpperCase().replace(/[-.]/g, "_")}`,
+                suggestions:
+                  suggestions.length > 0
+                    ? suggestions
+                    : ["What documents are required?", "Income limit for ST?", "How does Auto-Fill work?"],
+              });
+            }
+          }
+        } catch (err) {
+          console.warn(`Interactions API with ${model} warning:`, err);
+        }
       }
     }
 
-    // Emergency Fallback only if Gemini network is blocked
-    const fallbackReplies: Record<string, string> = {
-      en: "Hello! 🙏 As your AI Scholarship Advisor, I am here to guide you through every central and state tribal scholarship scheme (including Post-Matric, National Fellowship, and Top Class Education at premier institutes like IITs/NITs).\n\n### Key Benefits Available:\n• **100% Tuition Fee Coverage** for eligible ST students\n• **Monthly Living & Maintenance Allowance** transferred directly via DBT\n• **Computer/Laptop Grant** up to ₹45,000 for students in premier institutions\n• **Auto-Fill from Document**: Simply upload your caste and income certificates to populate your application instantly!\n\nPlease ask any specific question about income limits, required documents, or application tracking!",
-      hi: "नमस्ते! 🙏 जनजातीय कार्य मंत्रालय के AI छात्रवृत्ति सलाहकार के रूप में, मैं आपको सभी केंद्रीय और राज्य छात्रवृत्ति योजनाओं (पोस्ट-मैट्रिक, राष्ट्रीय फैलोशिप, और IITs/NITs के लिए टॉप क्लास शिक्षा) की पूरी जानकारी दे सकता हूँ।\n\n### मुख्य लाभ:\n• पात्र ST विद्यार्थियों के लिए **100% शिक्षण शुल्क प्रतिपूर्ति**\n• DBT के माध्यम से सीधे खाते में **मासिक रखरखाव भत्ता**\n• शीर्ष संस्थानों के विद्यार्थियों के लिए ₹45,000 तक का **कंप्यूटर/लैपटॉप अनुदान**\n• **दस्तावेज़ Auto-Fill**: प्रमाण पत्र अपलोड करके 2 मिनट में आवेदन पूरा करें!\n\nकृपया अपनी पात्रता या आवेदन प्रक्रिया के बारे में कोई भी प्रश्न पूछें!",
-      bn: "নমস্কার! 🙏 জনজাতি বিষয়ক মন্ত্রকের AI বৃত্তি উপদেষ্টা হিসেবে, আমি আপনাকে সমস্ত কেন্দ্রীয় ও রাজ্য উপজাতি বৃত্তি প্রকল্প (পোস্ট-ম্যাট্রিক, ন্যাশনাল ফেলোশিপ এবং IIT/NIT-এর জন্য শীর্ষ স্তরের শিক্ষা) সম্পর্কে সম্পূর্ণ নির্দেশনা প্রদান করছি।\n\n### প্রধান সুবিধাসমূহ:\n• যোগ্য ST শিক্ষার্থীদের জন্য **১০০% টিউশন ফি মওকুফ**\n• DBT-এর মাধ্যমে সরাসরি ব্যাংক একাউন্টে **মাসিক ভাতা**\n• শীর্ষ প্রতিষ্ঠানে ভর্তির জন্য ₹৪৫,০০০ পর্যন্ত **ল্যাপটপ/কম্পিউটার অনুদান**\n• **AI অটো-ফিল**: সার্টিফিকেট আপলোড করে মুহূর্তেই ফর্ম পূরণ করুন!",
-      sat: "ᱥᱟᱹᱜᱩᱱ ᱫᱟᱨᱟᱢ! 🙏 ᱤᱧ ᱟᱹᱫᱤᱵᱟᱹᱥᱤ ᱯᱟᱹᱴᱷᱩᱣᱟᱹ ᱠᱚ ᱞᱟᱹᱜᱤᱫ AI ᱥᱠᱚᱞᱟᱨᱥᱤᱯ ᱜᱚᱲᱚᱭᱤᱡ ᱠᱟᱱᱟᱹᱧ। Post-Matric, National Fellowship, ᱟᱨ Top Class ᱡᱚᱡᱚᱱᱟ ᱵᱟᱵᱚᱛ ᱡᱚᱛᱚ ᱠᱟᱛᱷᱟ ᱤᱧ ᱵᱟᱰᱟᱭ ᱚᱪᱚ ᱫᱟᱲᱮᱭᱟᱢᱟ।\n\n• ST ᱯᱟᱹᱴᱷᱩᱣᱟᱹ ᱠᱚ ᱞᱟᱹᱜᱤᱫ ᱯᱩᱨᱟᱹ ᱯᱷᱤ ᱪᱷᱟᱲ\n• DBT ᱫᱟᱨᱟᱭ ᱛᱮ ᱪᱟᱸᱫᱚᱠᱤᱭᱟᱹ ᱜᱚᱲᱚ ᱴᱟᱠᱟ\n• Auto-Fill OCR ᱫᱟᱨᱟᱭ ᱛᱮ ᱠᱟᱜᱚᱡᱽ ᱞᱟᱫᱮ ᱠᱟᱛᱮ ᱞᱚᱜᱚᱱ ᱯᱷᱚᱨᱢ ᱯᱮᱨᱮᱡᱽ!",
-      as: "নমস্কাৰ! 🙏 জনজাতীয় পৰিক্ৰমা মন্ত্ৰালয়ৰ AI বৃত্তি পৰামৰ্শদাতা হিচাপে, মই আপোনাক সকলো কেন্দ্রীয় আৰু ৰাজ্যিক জনজাতীয় বৃত্তি আঁচনি সম্পৰ্কে সম্পূৰ্ণ সহায় আগবঢ়াবলৈ সাজু।\n\n• যোগ্য ST ছাত্ৰ-ছাত্ৰীৰ বাবে **১০০% মাচুল ৰেহাই**\n• DBT-ৰ জৰিয়তে প্ৰত্যক্ষভাৱে **মাহেকীয়া জলপানী**\n• **AI অটো-ফিল**: চার্টিফিকেট আপল'ড কৰি পলকতে আবেদন সম্পূৰ্ণ কৰক!",
-    };
+    // Comprehensive topic-aware fallback if external API is unreachable
+    const smartFallback = getSmartFallbackResponse(message, activeLang, cleanUserName);
 
     return NextResponse.json({
       success: true,
-      reply: fallbackReplies[activeLang] || fallbackReplies.en,
+      reply: smartFallback.reply,
       language: activeLang,
-      intent: "EXPANDED_FALLBACK",
-      suggestions: [
-        "What documents are required?",
-        "Income limit for ST scholarship?",
-        "How does Auto-Fill OCR work?",
-      ],
+      intent: "SMART_VERIFIED_FALLBACK",
+      suggestions: smartFallback.suggestions,
     });
   } catch (error: any) {
     return NextResponse.json(
