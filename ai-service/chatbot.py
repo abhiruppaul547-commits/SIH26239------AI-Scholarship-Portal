@@ -80,11 +80,11 @@ PORTAL INNOVATIVE FEATURES (SIH26239):
 - 4-Tier Verification Workflow: Student Submission -> AI OCR Pre-Screening -> College/Institute Verification -> State Welfare Nodal Officer Scrutiny -> PFMS / DBT Disbursement.
 
 LINGUISTIC & TONE RULES:
-- Greetings: Begin with culturally respectful greetings: "Johar! / नमस्ते / ᱡᱚᱦᱟᱨ / নমস্কার / জোহাৰ".
+- Greetings: Begin with polite, natural greetings in the user's selected language (e.g., "Hello / नमस्ते / নমস্কার / ᱥᱟᱹᱜᱩᱱ ᱫᱟᱨᱟᱢ / নমস্কাৰ"). Never greet with "Johar" or "जोहार" under any circumstance; always use standard polite greetings like "नमस्ते", "Hello", or "নমস্কার".
 - Language Adaptability: Always reply in the requested or detected language:
   * English: Clear, professional, motivating, structured.
   * Hindi (हिन्दी): Respectful, accurate, fluent Devnagari.
-  * Santhali (ᱥᱟᱱᱛᱟᱲᱤ): Use Ol Chiki or respectful Santhali transliteration with traditional "Johar".
+  * Santhali (ᱥᱟᱱᱛᱟᱲᱤ): Use Ol Chiki or respectful Santhali transliteration with traditional "ᱥᱟᱹᱜᱩᱱ ᱫᱟᱨᱟᱢ" (Sagun Daram).
   * Bengali (বাংলা): Formal, polite, helpful.
   * Assamese (অসমীয়া): Polite, clear, accurate.
 - Formatting: Use short paragraphs, clear bold headers, and bullet points so it is easy to read on mobile devices.
@@ -98,15 +98,15 @@ INTENTS = [
     {
         "intent": "GREETING",
         "patterns": [
-            r"\b(hello|hi|hey|johar|namaste|pranam|namaskar|hul|kemon|kemcho)\b",
-            r"(नमस्ते|प्रणाम|जोहार|जय जोहार|নমস্কার|জোহাৰ|নমস্কাৰ)"
+            r"\b(hello|hi|hey|namaste|pranam|namaskar|hul|kemon|kemcho)\b",
+            r"(नमस्ते|प्रणाम|নমস্কার|নমস্কাৰ)"
         ],
         "replies": {
-            "en": "Johar! Welcome to the AI Scholarship Portal for Tribal Students (SIH26239). How may I assist you with your scholarship application today?",
-            "hi": "जोहार! जनजातीय छात्र छात्रवृत्ति पोर्टल (SIH26239) में आपका स्वागत है। मैं आपकी छात्रवृत्ति आवेदन में कैसे मदद कर सकता हूँ?",
-            "sat": "ᱡᱚᱦᱟᱨ! ᱟᱢ ᱫᱚ ᱱᱚᱣᱟ Tribal Scholarship Portal ᱨᱮ ᱥᱟᱹᱜᱩᱱ ᱫᱟᱨᱟᱢ। ᱥᱠᱚᱞᱟᱨᱥᱤᱯ ᱵᱟᱵᱚᱛ ᱪᱮᱫ ᱵᱟᱰᱟᱭ ᱥᱟᱱᱟᱢᱮᱫ ᱢᱮᱭᱟ?",
-            "bn": "জোহার ও নমস্কার! উপজাতি ছাত্রবৃত্তি পোর্টালে (SIH26239) আপনাকে স্বাগতম। বৃত্তির আবেদন সংক্রান্ত কীভাবে আপনাকে সাহায্য করতে পারি?",
-            "as": "জোহাৰ আৰু নমস্কাৰ! জনজাতীয় ছাত্ৰবৃত্তি পৰ্টেললৈ (SIH26239) আপোনাক স্বাগতম। বৃত্তিৰ আবেদন সম্পৰ্কে আপোনাক কেনেকৈ সহায় কৰিব পাৰোঁ?"
+            "en": "Hello! Welcome to the AI Scholarship Portal for Tribal Students (SIH26239). How may I assist you with your scholarship application today?",
+            "hi": "नमस्ते! जनजातीय छात्र छात्रवृत्ति पोर्टल (SIH26239) में आपका स्वागत है। मैं आपकी छात्रवृत्ति आवेदन में कैसे मदद कर सकता हूँ?",
+            "sat": "ᱥᱟᱹᱜᱩᱱ ᱫᱟᱨᱟᱢ! ᱟᱢ ᱫᱚ ᱱᱚᱣᱟ Tribal Scholarship Portal ᱨᱮ ᱥᱟᱹᱜᱩᱱ ᱫᱟᱨᱟᱢ। ᱥᱠᱚᱞᱟᱨᱥᱤᱯ ᱵᱟᱵᱚᱛ ᱪᱮᱫ ᱵᱟᱰᱟᱭ ᱥᱟᱱᱟᱢᱮᱫ ᱢᱮᱭᱟ?",
+            "bn": "নমস্কার! উপজাতি ছাত্রবৃত্তি পোর্টালে (SIH26239) আপনাকে স্বাগতম। বৃত্তির আবেদন সংক্রান্ত কীভাবে আপনাকে সাহায্য করতে পারি?",
+            "as": "নমস্কাৰ! জনজাতীয় ছাত্ৰবৃত্তি পৰ্টেললৈ (SIH26239) আপোনাক স্বাগতম। বৃত্তিৰ আবেদন সম্পৰ্কে আপোনাক কেনেকৈ সহায় কৰিব পাৰোঁ?"
         },
         "suggestions": {
             "en": ["What documents do I need?", "What is the income limit for ST?", "How does Auto-Fill OCR work?"],
@@ -287,7 +287,7 @@ def chat_vernacular(req: ChatRequest):
             "hi": "HINDI (हिन्दी - देवनागरी लिपि)",
             "bn": "BENGALI (বাংলা - বাংলা লিপি)",
             "as": "ASSAMESE (অসমীয়া - অসমীয়া লিপি)",
-            "sat": "SANTHALI (ᱥᱟᱱᱛᱟᱲᱤ - Ol Chiki or Latin with traditional Johar)",
+            "sat": "SANTHALI (ᱥᱟᱱᱛᱟᱲᱤ - Ol Chiki or Latin script)",
             "en": "ENGLISH"
         }
         target_name = target_lang_names.get(lang, "ENGLISH")
@@ -380,11 +380,11 @@ SUGGESTIONS: <Question 1 in {target_name}> | <Question 2 in {target_name}> | <Qu
 
     # 3. Comprehensive Local General Fallback
     fallback_replies = {
-        "en": "Johar! I am your AI Tribal Scholarship Advisor. I can assist you with government schemes (Post-Matric, Higher Education, Top Class), required certificates (ST Caste & Income certificates), annual income limits, and how our OpenCV AI Auto-Fill works. What would you like to know?",
-        "hi": "जोहार! मैं आपका AI जनजातीय छात्रवृत्ति सलाहकार हूँ। मैं आपको सरकारी योजनाओं (पोस्ट-मैट्रिक, उच्च शिक्षा, टॉप क्लास), आवश्यक प्रमाण पत्रों (ST जाति एवं आय प्रमाण पत्र), आय सीमा, और OpenCV AI ऑटो-फिल के बारे में विस्तार से बता सकता हूँ। आप क्या जानना चाहते हैं?",
-        "sat": "ᱡᱚᱦᱟᱨ! ᱤᱧ ᱟᱹᱫᱤᱵᱟᱹᱥᱤ ᱥᱠᱚᱞᱟᱨᱥᱤᱯ ᱡᱚᱡᱚᱱᱟ, ᱡᱟᱹᱛᱤ ᱟᱨ ᱟᱭ ᱥᱟᱠᱟᱢ, ᱟᱨ Auto-Fill OCR ᱵᱟᱵᱚᱛ ᱜᱚᱲᱚᱭᱤᱡ AI ᱠᱟᱱᱟᱹᱧ। ᱪᱮᱫ ᱵᱟᱰᱟᱭ ᱥᱟᱱᱟᱢᱮᱫ ᱢᱮᱭᱟ?",
-        "bn": "জোহার! আমি উপজাতি শিক্ষার্থীদের জন্য AI বৃত্তি পরামর্শক। পোস্ট-ম্যাট্রিক স্কলারশিপ, ন্যাশনাল ফেলোশিপ, প্রয়োজনীয় সার্টিফিকেট (জাতি ও আয় শংসাপত্র), আয়ের সীমা এবং OpenCV AI অটো-ফিল সংক্রান্ত যেকোনো তথ্য আমি দিতে পারি।",
-        "as": "জোহাৰ! মই জনজাতীয় শিক্ষাৰ্থীসকলৰ বাবে AI বৃত্তি পৰামৰ্শদাতা। প'ষ্ট-মেট্ৰিক বৃত্তি, উচ্চ শিক্ষা, প্ৰয়োজনীয় চার্টিফিকেট (জাতি আৰু আয়ৰ চার্টিফিকেট), আয়ৰ সীমা আৰু AI অটো-ফিল সম্পৰ্কে আপুনি সোধিব পাৰে।"
+        "en": "Hello! I am your AI Tribal Scholarship Advisor. I can assist you with government schemes (Post-Matric, Higher Education, Top Class), required certificates (ST Caste & Income certificates), annual income limits, and how our OpenCV AI Auto-Fill works. What would you like to know?",
+        "hi": "नमस्ते! मैं आपका AI जनजातीय छात्रवृत्ति सलाहकार हूँ। मैं आपको सरकारी योजनाओं (पोस्ट-मैट्रिक, उच्च शिक्षा, टॉप क्लास), आवश्यक प्रमाण पत्रों (ST जाति एवं आय प्रमाण पत्र), आय सीमा, और OpenCV AI ऑटो-फिल के बारे में विस्तार से बता सकता हूँ। आप क्या जानना चाहते हैं?",
+        "sat": "ᱥᱟᱹᱜᱩᱱ ᱫᱟᱨᱟᱢ! ᱤᱧ ᱟᱹᱫᱤᱵᱟᱹᱥᱤ ᱥᱠᱚᱞᱟᱨᱥᱤᱯ ᱡᱚᱡᱚᱱᱟ, ᱡᱟᱹᱛᱤ ᱟᱨ ᱟᱭ ᱥᱟᱠᱟᱢ, ᱟᱨ Auto-Fill OCR ᱵᱟᱵᱚᱛ ᱜᱚᱲᱚᱭᱤᱡ AI ᱠᱟᱱᱟᱹᱧ। ᱪᱮᱫ ᱵᱟᱰᱟᱭ ᱥᱟᱱᱟᱢᱮᱫ ᱢᱮᱭᱟ?",
+        "bn": "নমস্কার! আমি উপজাতি শিক্ষার্থীদের জন্য AI বৃত্তি পরামর্শক। পোস্ট-ম্যাট্রিক স্কলারশিপ, ন্যাশনাল ফেলোশিপ, প্রয়োজনীয় সার্টিফিকেট (জাতি ও আয় শংসাপত্র), আয়ের সীমা এবং OpenCV AI অটো-ফিল সংক্রান্ত যেকোনো তথ্য আমি দিতে পারি।",
+        "as": "নমস্কাৰ! মই জনজাতীয় শিক্ষাৰ্থীসকলৰ বাবে AI বৃত্তি পৰামৰ্শদাতা। প'ষ্ট-মেট্ৰিক বৃত্তি, উচ্চ শিক্ষা, প্ৰয়োজনীয় চার্টিফিকেট (জাতি আৰু আয়ৰ চার্টিফিকেট), আয়ৰ সীমা আৰু AI অটো-ফিল সম্পৰ্কে আপুনি সোধিব পাৰে।"
     }
 
     return ChatResponse(
@@ -416,7 +416,7 @@ def text_to_speech(req: TTSRequest):
     clean_text = re.sub(r"\s+", " ", clean_text).strip()
 
     if not clean_text:
-        clean_text = "Johar"
+        clean_text = "Hello"
 
     # Truncate to first 450 characters for rapid real-time audio playback
     if len(clean_text) > 450:

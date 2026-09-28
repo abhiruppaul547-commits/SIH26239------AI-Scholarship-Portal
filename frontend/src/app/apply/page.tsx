@@ -19,6 +19,7 @@ import { scholarshipApi, applicationApi, authApi } from "@/lib/api";
 import FileUploader from "@/components/FileUploader";
 import { useLanguage, translateScheme } from "@/lib/i18n";
 import { useAuth } from "@/context/AuthContext";
+import { getCleanFullName } from "@/lib/nameUtils";
 
 function ApplyForm() {
   const router = useRouter();
@@ -68,10 +69,8 @@ function ApplyForm() {
     });
 
     const localUser = authApi.getCurrentUser();
-    const activeName =
-      (authUser?.displayName && authUser.displayName !== "Birsa Soren" ? authUser.displayName : "") ||
-      (localUser?.fullName && localUser.fullName !== "Birsa Soren" ? localUser.fullName : "") ||
-      (authUser?.email && !authUser.email.includes("student@sih.gov.in") ? authUser.email.split("@")[0] : "");
+    const cleanFullName = getCleanFullName(authUser || localUser);
+    const activeName = cleanFullName !== "Student" ? cleanFullName : "";
     const activeEmail =
       (authUser?.email && !authUser.email.includes("student@sih.gov.in") ? authUser.email : "") ||
       (localUser?.email && !localUser.email.includes("student@sih.gov.in") ? localUser.email : "");

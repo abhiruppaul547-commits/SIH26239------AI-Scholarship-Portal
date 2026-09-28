@@ -143,7 +143,7 @@ public class AiClientService {
 
         Map<String, Object> fallback = new HashMap<>();
         fallback.put("success", true);
-        fallback.put("reply", "Johar! To apply for ST scholarships, you need your Caste Certificate, Income Certificate, and latest Marksheet. You can use our Auto-Fill from Document button to scan them directly!");
+        fallback.put("reply", "Hello! To apply for ST scholarships, you need your Caste Certificate, Income Certificate, and latest Marksheet. You can use our Auto-Fill from Document button to scan them directly!");
         fallback.put("intent", "document_query");
         fallback.put("language", language);
         return fallback;

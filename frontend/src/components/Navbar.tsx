@@ -6,6 +6,7 @@ import { GraduationCap, User, LogOut, Shield, Sparkles, Globe, FileText, LayoutD
 import { authApi } from "@/lib/api";
 import { useLanguage, SUPPORTED_LANGUAGES, Language } from "@/lib/i18n";
 import { useAuth } from "@/context/AuthContext";
+import { getCleanFullName } from "@/lib/nameUtils";
 
 export default function Navbar() {
   const [currentUser, setCurrentUser] = useState<any>(null);
@@ -31,16 +32,7 @@ export default function Navbar() {
     window.location.href = "/";
   };
 
-  const effectiveFullName =
-    firebaseUser?.displayName && firebaseUser.displayName !== "Birsa Soren"
-      ? firebaseUser.displayName
-      : currentUser?.fullName && currentUser.fullName !== "Birsa Soren"
-      ? currentUser.fullName
-      : firebaseUser?.email
-      ? firebaseUser.email.split("@")[0]
-      : currentUser?.email
-      ? currentUser.email.split("@")[0]
-      : "Student";
+  const effectiveFullName = getCleanFullName(firebaseUser || currentUser);
 
   const activeUser = (firebaseUser || currentUser)
     ? {

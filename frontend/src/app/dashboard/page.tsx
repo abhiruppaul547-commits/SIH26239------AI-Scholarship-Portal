@@ -22,6 +22,7 @@ import { useAuth } from "@/context/AuthContext";
 import { getUserApplications, saveApplication } from "@/lib/databaseService";
 import ApplicationTracker from "@/components/ApplicationTracker";
 import { useLanguage, translateScheme, translateStatus } from "@/lib/i18n";
+import { getCleanFirstName, getCleanFullName } from "@/lib/nameUtils";
 
 export default function StudentDashboard() {
   const router = useRouter();
@@ -78,17 +79,7 @@ export default function StudentDashboard() {
   const loadDashboardData = async () => {
     try {
       const localUser = authApi.getCurrentUser();
-      const realName =
-        user?.displayName && user.displayName.trim() && user.displayName !== "Birsa Soren"
-          ? user.displayName
-          : localUser?.fullName && localUser.fullName.trim() && localUser.fullName !== "Birsa Soren"
-          ? localUser.fullName
-          : user?.email
-          ? user.email.split("@")[0]
-          : localUser?.email
-          ? localUser.email.split("@")[0]
-          : "Student";
-
+      const realName = getCleanFullName(user || localUser);
       const realEmail = user?.email || localUser?.email || "student@sih.gov.in";
 
       const prof = await authApi
@@ -180,7 +171,7 @@ export default function StudentDashboard() {
         scholarshipId: scheme.schemeId || 1,
         scholarshipTitle: scheme.title || "National Fellowship for ST Students",
         scholarshipAmount: scheme.scholarshipAmount || 28000,
-        studentName: profile?.fullName || user?.displayName || user?.email?.split("@")[0] || "Student",
+        studentName: getCleanFullName(profile?.fullName || user || authApi.getCurrentUser()),
         email: user?.email || "student@sih.gov.in",
         category: profile?.category || "ST",
         annualIncome: profile?.annualFamilyIncome || 120000,
@@ -216,7 +207,7 @@ export default function StudentDashboard() {
             <Sparkles className="h-3.5 w-3.5" /> Direct Beneficiary Dashboard
           </div>
           <h1 className="text-3xl font-extrabold text-stone-900 dark:text-white tracking-tight">
-            {t("dashboardGreeting")}, {profile?.fullName || user?.displayName || user?.email?.split("@")[0] || "Student"}!
+            {t("dashboardGreeting")}, {getCleanFirstName(profile?.fullName || user || authApi.getCurrentUser())}!
           </h1>
           <p className="text-xs sm:text-sm text-stone-500 mt-1">
             {t("dashboardSub")}
