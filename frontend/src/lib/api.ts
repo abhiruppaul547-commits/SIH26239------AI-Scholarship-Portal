@@ -121,10 +121,10 @@ export const applicationApi = {
 
 // AI Chatbot endpoint
 export const aiApi = {
-  chat: async (message: string, language: string = "en") => {
+  chat: async (message: string, language: string = "en", userName?: string) => {
     // 1. Try Next.js serverless route (/api/ai/chat) which runs directly on Vercel with Gemini
     try {
-      const res = await axios.post("/api/ai/chat", { message, language }, { timeout: 15000 });
+      const res = await axios.post("/api/ai/chat", { message, language, userName }, { timeout: 15000 });
       if (res.data && res.data.reply) {
         return res.data;
       }
@@ -132,7 +132,7 @@ export const aiApi = {
 
     // 2. Try Spring Boot Gateway via Ngrok tunnel
     try {
-      const res = await api.post("/ai/chat", { message, language }, { timeout: 10000 });
+      const res = await api.post("/ai/chat", { message, language, userName }, { timeout: 10000 });
       if (res.data && res.data.reply) {
         return res.data;
       }
@@ -140,31 +140,32 @@ export const aiApi = {
 
     // 3. Fallback direct to local FastAPI microservice if running on localhost
     try {
-      const res = await axios.post("http://localhost:8000/api/ai/chat", { message, language }, { timeout: 5000 });
+      const res = await axios.post("http://localhost:8000/api/ai/chat", { message, language, userName }, { timeout: 5000 });
       if (res.data && res.data.reply) {
         return res.data;
       }
     } catch {}
 
+    const greetingName = userName ? `, ${userName}` : "";
     const fallbackMap: Record<string, { reply: string; suggestions: string[] }> = {
       bn: {
-        reply: "জোহার ও নমস্কার! 🙏 জনজাতি বিষয়ক মন্ত্রকের AI বৃত্তি উপদেষ্টা হিসেবে আমি আপনাকে পোস্ট-ম্যাট্রিক, ন্যাশনাল ফেলোশিপ এবং শীর্ষ প্রতিষ্ঠানের যেকোনো স্কলারশিপ সংক্রান্ত সম্পূর্ণ সাহায্য করতে প্রস্তুত।",
+        reply: `জোহার ও নমস্কার${greetingName}! 🙏 জনজাতি বিষয়ক মন্ত্রকের AI বৃত্তি উপদেষ্টা হিসেবে আমি আপনাকে পোস্ট-ম্যাট্রিক, ন্যাশনাল ফেলোশিপ এবং শীর্ষ প্রতিষ্ঠানের যেকোনো স্কলারশিপ সংক্রান্ত সম্পূর্ণ সাহায্য করতে প্রস্তুত।`,
         suggestions: ["কি কি নথিপত্র লাগবে?", "ST বৃত্তির আয় সীমা কত?", "Auto-Fill কীভাবে কাজ করে?"],
       },
       hi: {
-        reply: "जोहार! 🙏 जनजातीय कार्य मंत्रालय के AI छात्रवृत्ति सलाहकार के रूप में मैं आपको पोस्ट-मैट्रिक, नेशनल फेलोशिप और टॉप क्लास शिक्षा से जुड़ी हर जानकारी देने के लिए तैयार हूँ।",
+        reply: `जोहार${greetingName}! 🙏 जनजातीय कार्य मंत्रालय के AI छात्रवृत्ति सलाहकार के रूप में मैं आपको पोस्ट-मैट्रिक, नेशनल फेलोशिप और टॉप क्लास शिक्षा से जुड़ी हर जानकारी देने के लिए तैयार हूँ।`,
         suggestions: ["कौन से दस्तावेज़ चाहिए?", "ST छात्रवृत्ति की आय सीमा?", "Auto-Fill कैसे काम करता है?"],
       },
       as: {
-        reply: "জোহাৰ! 🙏 জনজাতীয় পৰিক্ৰমা মন্ত্ৰালয়ৰ AI বৃত্তি পৰামৰ্শদাতা হিচাপে মই আপোনাক সকলো জনজাতীয় বৃত্তি আঁচনি সম্পৰ্কে সহায় কৰিবলৈ সাজু।",
+        reply: `জোহাৰ${greetingName}! 🙏 জনজাতীয় পৰিক্ৰমা মন্ত্ৰালয়ৰ AI বৃত্তি পৰামৰ্শদাতা হিচাপে মই আপোনাক সকলো জনজাতীয় বৃত্তি আঁচনি সম্পৰ্কে সহায় কৰিবলৈ সাজু।`,
         suggestions: ["কি কি নথিপত্ৰ লাগিব?", "ST বাৰ্ষিক আয়ৰ সীমা কিমান?", "Auto-Fill কেনেকৈ কাম কৰে?"],
       },
       sat: {
-        reply: "ᱡᱚᱦᱟᱨ! 🙏 ᱤᱧ ᱟᱹᱫᱤᱵᱟᱹᱥᱤ ᱯᱟᱹᱴᱷᱩᱣᱟᱹ ᱠᱚ ᱞᱟᱹᱜᱤᱫ AI ᱥᱠᱚᱞᱟᱨᱥᱤᱯ ᱜᱚᱲᱚᱭᱤᱡ ᱠᱟᱱᱟᱹᱧ। ᱥᱠᱚᱞᱟᱨᱥᱤᱯ ᱵᱟᱵᱚᱛ ᱡᱚᱛᱚ ᱠᱟᱛᱷᱟ ᱤᱧ ᱵᱟᱰᱟᱭ ᱚᱪᱚ ᱫᱟᱲᱮᱭᱟᱢᱟ।",
+        reply: `ᱡᱚᱦᱟᱨ${greetingName}! 🙏 ᱤᱧ ᱟᱹᱫᱤᱵᱟᱹᱥᱤ ᱯᱟᱹᱴᱷᱩᱣᱟᱹ ᱠᱚ ᱞᱟᱹᱜᱤᱫ AI ᱥᱠᱚᱞᱟᱨᱥᱤᱯ ᱜᱚᱲᱚᱭᱤᱡ ᱠᱟᱱᱟᱹᱧ। ᱥᱠᱚᱞᱟᱨᱥᱤᱯ ᱵᱟᱵᱚᱛ ᱡᱚᱛᱚ ᱠᱟᱛᱷᱟ ᱤᱧ ᱵᱟᱰᱟᱭ ᱚᱪᱚ ᱫᱟᱲᱮᱭᱟᱢᱟ।`,
         suggestions: ["ᱪᱮᱫ ᱠᱟᱜᱚᱡᱽ ᱞᱟᱜᱟᱜ-ᱟ?", "ST ᱞᱟᱹᱜᱤᱫ ᱥᱮᱨᱢᱟ ᱟᱭ?", "Auto-Fill OCR ᱪᱮᱫ ᱞᱮᱠᱟ ᱠᱟᱹᱢᱤᱭᱟ?"],
       },
       en: {
-        reply: "Johar! 🙏 As your official AI Scholarship Advisor, I am here to guide you with any question regarding ST scholarships, income eligibility (Post-Matric limit ₹2.5L, Top Class ₹6L), required certificates, or DBT transfers.",
+        reply: `Johar${greetingName}! 🙏 As your official AI Scholarship Advisor, I am here to guide you with any question regarding ST scholarships, income eligibility (Post-Matric limit ₹2.5L, Top Class ₹6L), required certificates, or DBT transfers.`,
         suggestions: ["What documents do I need?", "Income limits for ST?", "How does OCR work?"],
       },
     };

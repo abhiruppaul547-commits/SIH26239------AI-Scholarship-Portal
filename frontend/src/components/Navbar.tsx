@@ -27,13 +27,24 @@ export default function Navbar() {
     window.location.href = "/";
   };
 
-  const activeUser = firebaseUser
+  const effectiveFullName =
+    firebaseUser?.displayName && firebaseUser.displayName !== "Birsa Soren"
+      ? firebaseUser.displayName
+      : currentUser?.fullName && currentUser.fullName !== "Birsa Soren"
+      ? currentUser.fullName
+      : firebaseUser?.email
+      ? firebaseUser.email.split("@")[0]
+      : currentUser?.email
+      ? currentUser.email.split("@")[0]
+      : "Student";
+
+  const activeUser = (firebaseUser || currentUser)
     ? {
-        fullName: firebaseUser.displayName || firebaseUser.email?.split("@")[0] || "Student",
-        email: firebaseUser.email,
-        role: "STUDENT",
+        fullName: effectiveFullName,
+        email: firebaseUser?.email || currentUser?.email,
+        role: currentUser?.role || "STUDENT",
       }
-    : currentUser;
+    : null;
 
   const currentLangObj = SUPPORTED_LANGUAGES.find((l) => l.code === language) || SUPPORTED_LANGUAGES[0];
 
@@ -136,22 +147,7 @@ export default function Navbar() {
                 <LogOut className="h-4 w-4" />
               </button>
             </div>
-          ) : (
-            <div className="flex items-center gap-2">
-              <Link
-                href="/login"
-                className="rounded-xl border border-stone-300 dark:border-stone-700 px-3.5 py-1.5 text-xs font-semibold text-stone-700 dark:text-stone-300 hover:bg-stone-100 dark:hover:bg-stone-900 transition-colors"
-              >
-                {t("navSignIn")}
-              </Link>
-              <Link
-                href="/login"
-                className="rounded-xl bg-gradient-to-r from-orange-600 to-amber-600 px-4 py-1.5 text-xs font-semibold text-white shadow-sm hover:from-orange-500 hover:to-amber-500 transition-all"
-              >
-                {t("navRegister")}
-              </Link>
-            </div>
-          )}
+          ) : null}
         </div>
       </div>
     </header>

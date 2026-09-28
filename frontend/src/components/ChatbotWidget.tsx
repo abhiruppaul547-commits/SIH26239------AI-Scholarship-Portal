@@ -13,8 +13,9 @@ import {
   Volume2,
   VolumeX,
 } from "lucide-react";
-import { aiApi } from "@/lib/api";
+import { aiApi, authApi } from "@/lib/api";
 import { useLanguage, SUPPORTED_LANGUAGES, Language } from "@/lib/i18n";
+import { useAuth } from "@/context/AuthContext";
 
 interface Message {
   id: string;
@@ -56,12 +57,16 @@ const NATIVE_SUGGESTIONS: Record<Language, string[]> = {
   ],
 };
 
-const WELCOME_MESSAGES: Record<Language, string> = {
-  en: "Johar! 🙏 I am your production-grade AI Scholarship Advisor powered by Gemini. Ask me anything about schemes, income criteria, documents, DBT transfers, or AI auto-filling!",
-  hi: "जोहार! 🙏 मैं जनजातीय छात्रों के लिए आपका Gemini-संचालित AI छात्रवृत्ति सलाहकार हूँ। योजनाओं, आय सीमा, दस्तावेज़ों, या AI ऑटो-फिल के बारे में कुछ भी पूछें!",
-  sat: "ᱡᱚᱦᱟᱨ! 🙏 ᱤᱧ ᱟᱹᱫᱤᱵᱟᱹᱥᱤ ᱯᱟᱹᱴᱷᱩᱣᱟᱹ ᱠᱚ ᱞᱟᱹᱜᱤᱫ Gemini ᱫᱟᱨᱟᱭ ᱛᱮ ᱪᱟᱞᱟᱣᱚᱜ ᱠᱟᱱ AI ᱥᱠᱚᱞᱟᱨᱥᱤᱯ ᱜᱚᱲᱚᱭᱤᱡ। ᱥᱠᱚᱞᱟᱨᱥᱤᱯ, ᱟᱭ ᱥᱤᱢᱟᱹ ᱟᱨ OCR ᱵᱟᱵᱚᱛ ᱠᱩᱞᱤᱭᱤᱧ ᱢᱮ!",
-  bn: "জোহার ও নমস্কার! 🙏 আমি আপনার Gemini-চালিত অফিসিয়াল AI বৃত্তি উপদেষ্টা। স্কলারশিপ স্কিম, আয়ের সীমা, প্রয়োজনীয় নথিপত্র ও AI ভেরিফিকেশন নিয়ে যেকোনো প্রশ্ন করুন!",
-  as: "জোহাৰ আৰু নমস্কাৰ! 🙏 মই Gemini-চালিত জনজাতীয় শিক্ষাৰ্থীৰ AI বৃত্তি পৰামৰ্শদাতা। আঁচনি, আয়ৰ যোগ্যতা, নথিপত্ৰ বা AI অটো-ফিল সম্পৰ্কে আপুনি সোধিব পাৰে!",
+const getWelcomeMessage = (lang: Language, name?: string | null): string => {
+  const greetingName = name ? `, ${name}` : "";
+  const map: Record<Language, string> = {
+    en: `Johar${greetingName}! 🙏 I am your production-grade AI Scholarship Advisor powered by Gemini. Ask me anything about schemes, income criteria, documents, DBT transfers, or AI auto-filling!`,
+    hi: `जोहार${greetingName}! 🙏 मैं आपका Gemini-संचालित AI छात्रवृत्ति सलाहकार हूँ। योजनाओं, आय सीमा, दस्तावेज़ों, या AI ऑटो-फिल के बारे में कुछ भी पूछें!`,
+    sat: `ᱡᱚᱦᱟᱨ${greetingName}! 🙏 ᱤᱧ ᱟᱹᱫᱤᱵᱟᱹᱥᱤ ᱯᱟᱹᱴᱷᱩᱣᱟᱹ ᱠᱚ ᱞᱟᱹᱜᱤᱫ Gemini ᱫᱟᱨᱟᱭ ᱛᱮ ᱪᱟᱞᱟᱣᱚᱜ ᱠᱟᱱ AI ᱥᱠᱚᱞᱟᱨᱥᱤᱯ ᱜᱚᱲᱚᱭᱤᱡ। ᱥᱠᱚᱞᱟᱨᱥᱤᱯ, ᱟᱭ ᱥᱤᱢᱟᱹ ᱟᱨ OCR ᱵᱟᱵᱚᱛ ᱠᱩᱞᱤᱭᱤᱧ ᱢᱮ!`,
+    bn: `জোহার ও নমস্কার${greetingName}! 🙏 আমি আপনার Gemini-চালিত অফিসিয়াল AI বৃত্তি উপদেষ্টা। স্কলারশিপ স্কিম, আয়ের সীমা, প্রয়োজনীয় নথিপত্র ও AI ভেরিফিকেশন নিয়ে যেকোনো প্রশ্ন করুন!`,
+    as: `জোহাৰ আৰু নমস্কাৰ${greetingName}! 🙏 মই Gemini-চালিত জনজাতীয় শিক্ষাৰ্থীৰ AI বৃত্তি পৰামৰ্শদাতা। আঁচনি, আয়ৰ যোগ্যতা, নথিপত্ৰ বা AI অটো-ফিল সম্পৰ্কে আপুনি সোধিব পাৰে!`,
+  };
+  return map[lang] || map.en;
 };
 
 // Map portal language codes to speech synthesis BCP-47 codes
@@ -160,12 +165,29 @@ export default function ChatbotWidget() {
   const [isListening, setIsListening] = useState(false);
   const [speakingMessageId, setSpeakingMessageId] = useState<string | null>(null);
   const { language, setLanguage, t } = useLanguage();
+  const { user: firebaseUser } = useAuth();
+  const [localUser, setLocalUser] = useState<any>(null);
+
+  useEffect(() => {
+    setLocalUser(authApi.getCurrentUser());
+  }, []);
+
+  const activeUserName =
+    firebaseUser?.displayName && firebaseUser.displayName.trim() && firebaseUser.displayName !== "Birsa Soren"
+      ? firebaseUser.displayName
+      : localUser?.fullName && localUser.fullName.trim() && localUser.fullName !== "Birsa Soren"
+      ? localUser.fullName
+      : firebaseUser?.email
+      ? firebaseUser.email.split("@")[0]
+      : localUser?.email
+      ? localUser.email.split("@")[0]
+      : null;
 
   const [messages, setMessages] = useState<Message[]>([
     {
       id: "welcome",
       sender: "bot",
-      text: WELCOME_MESSAGES[language] || WELCOME_MESSAGES.en,
+      text: getWelcomeMessage(language, activeUserName),
       timestamp: new Date().toLocaleTimeString([], { hour: "2-digit", minute: "2-digit" }),
     },
   ]);
@@ -188,7 +210,7 @@ export default function ChatbotWidget() {
     }
   }, []);
 
-  // Sync welcome message and suggestions when language changes
+  // Sync welcome message and suggestions when language or user changes
   useEffect(() => {
     setSuggestions(NATIVE_SUGGESTIONS[language] || NATIVE_SUGGESTIONS.en);
     setMessages((prev) => {
@@ -197,14 +219,14 @@ export default function ChatbotWidget() {
           {
             id: "welcome",
             sender: "bot",
-            text: WELCOME_MESSAGES[language] || WELCOME_MESSAGES.en,
+            text: getWelcomeMessage(language, activeUserName),
             timestamp: new Date().toLocaleTimeString([], { hour: "2-digit", minute: "2-digit" }),
           },
         ];
       }
       return prev;
     });
-  }, [language]);
+  }, [language, activeUserName]);
 
   const scrollToBottom = () => {
     messagesEndRef.current?.scrollIntoView({ behavior: "smooth" });
@@ -260,11 +282,11 @@ export default function ChatbotWidget() {
     setIsLoading(true);
 
     try {
-      const data = await aiApi.chat(query, language);
+      const data = await aiApi.chat(query, language, activeUserName || undefined);
       const botMsg: Message = {
         id: (Date.now() + 1).toString(),
         sender: "bot",
-        text: data.reply || WELCOME_MESSAGES[language],
+        text: data.reply || getWelcomeMessage(language, activeUserName),
         timestamp: new Date().toLocaleTimeString([], { hour: "2-digit", minute: "2-digit" }),
       };
       setMessages((prev) => [...prev, botMsg]);
@@ -275,7 +297,7 @@ export default function ChatbotWidget() {
       const fallbackMsg: Message = {
         id: (Date.now() + 1).toString(),
         sender: "bot",
-        text: WELCOME_MESSAGES[language] || "Johar! Please check scholarship guidelines or contact the district nodal officer.",
+        text: getWelcomeMessage(language, activeUserName) || "Johar! Please check scholarship guidelines or contact the district nodal officer.",
         timestamp: new Date().toLocaleTimeString([], { hour: "2-digit", minute: "2-digit" }),
       };
       setMessages((prev) => [...prev, fallbackMsg]);

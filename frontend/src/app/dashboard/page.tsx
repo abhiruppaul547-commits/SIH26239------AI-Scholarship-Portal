@@ -78,17 +78,37 @@ export default function StudentDashboard() {
   const loadDashboardData = async () => {
     try {
       const localUser = authApi.getCurrentUser();
-      const prof = await authApi.getProfile().catch(() => ({
-        fullName: user?.displayName || localUser?.fullName || "Birsa Soren",
-        email: user?.email || localUser?.email || "student@sih.gov.in",
-        category: "ST",
-        tribeName: "Santhal",
-        annualFamilyIncome: 120000,
-        institutionName: "NIT Jamshedpur",
-        course: "B.Tech Computer Science",
-        isCasteVerified: true,
-        isIncomeVerified: true,
-      }));
+      const realName =
+        user?.displayName && user.displayName.trim() && user.displayName !== "Birsa Soren"
+          ? user.displayName
+          : localUser?.fullName && localUser.fullName.trim() && localUser.fullName !== "Birsa Soren"
+          ? localUser.fullName
+          : user?.email
+          ? user.email.split("@")[0]
+          : localUser?.email
+          ? localUser.email.split("@")[0]
+          : "Student";
+
+      const realEmail = user?.email || localUser?.email || "student@sih.gov.in";
+
+      const prof = await authApi
+        .getProfile()
+        .then((p) => ({
+          ...p,
+          fullName: p.fullName && p.fullName !== "Birsa Soren" ? p.fullName : realName,
+          email: p.email || realEmail,
+        }))
+        .catch(() => ({
+          fullName: realName,
+          email: realEmail,
+          category: localUser?.category || "ST",
+          tribeName: localUser?.tribeName || "Santhal",
+          annualFamilyIncome: localUser?.annualFamilyIncome || 120000,
+          institutionName: localUser?.institutionName || "NIT Jamshedpur",
+          course: localUser?.course || "B.Tech Computer Science",
+          isCasteVerified: true,
+          isIncomeVerified: true,
+        }));
       setProfile(prof);
 
       // Load traditional core applications
@@ -160,7 +180,7 @@ export default function StudentDashboard() {
         scholarshipId: scheme.schemeId || 1,
         scholarshipTitle: scheme.title || "National Fellowship for ST Students",
         scholarshipAmount: scheme.scholarshipAmount || 28000,
-        studentName: profile?.fullName || user?.displayName || "Birsa Soren",
+        studentName: profile?.fullName || user?.displayName || user?.email?.split("@")[0] || "Student",
         email: user?.email || "student@sih.gov.in",
         category: profile?.category || "ST",
         annualIncome: profile?.annualFamilyIncome || 120000,
@@ -196,7 +216,7 @@ export default function StudentDashboard() {
             <Sparkles className="h-3.5 w-3.5" /> Direct Beneficiary Dashboard
           </div>
           <h1 className="text-3xl font-extrabold text-stone-900 dark:text-white tracking-tight">
-            {t("dashboardGreeting")}, {profile?.fullName || user?.displayName || user?.email?.split("@")[0] || "Birsa Soren"}!
+            {t("dashboardGreeting")}, {profile?.fullName || user?.displayName || user?.email?.split("@")[0] || "Student"}!
           </h1>
           <p className="text-xs sm:text-sm text-stone-500 mt-1">
             {t("dashboardSub")}

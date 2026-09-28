@@ -81,7 +81,7 @@ function extractTextFromGeminiResponse(data: any): string {
 
 export async function POST(req: Request) {
   try {
-    const { message, language = "en" } = await req.json();
+    const { message, language = "en", userName } = await req.json();
 
     if (!message || typeof message !== "string") {
       return NextResponse.json({ error: "Message is required" }, { status: 400 });
@@ -115,10 +115,13 @@ export async function POST(req: Request) {
       en: "ENGLISH",
     };
     const targetName = targetLangNames[activeLang] || "ENGLISH";
+    const userIntro = userName
+      ? `The applicant's name is "${userName}". Address them warmly and respectfully by their name in greetings when appropriate.\n`
+      : "";
 
     const promptInput =
       activeLang === "en"
-        ? `The user is asking in English. You are an expert, thoughtful, knowledgeable AI Assistant (powered by Google Gemini).
+        ? `${userIntro}The user is asking in English. You are an expert, thoughtful, knowledgeable AI Assistant (powered by Google Gemini).
 Respond with rich, intelligent, comprehensive explanations, bold headings, and bullet points.
 You are a true full LLM capable of answering ANY topic: science, coding, scholarships, education, career, or general advice.
 
@@ -126,7 +129,7 @@ User Question: ${message}
 
 End with: SUGGESTIONS: <Followup Query 1> | <Followup Query 2> | <Followup Query 3>`
         : `*** CRITICAL LANGUAGE & DIALECT ENFORCEMENT ***
-The user is conversing in: ${targetName}.
+${userIntro}The user is conversing in: ${targetName}.
 You MUST generate your ENTIRE response, headings, bullet points, explanations, and advice 100% strictly in ${targetName}.
 Understand all regional idioms, tribal terminology, or colloquial dialect expressions used.
 Respond warmly, intelligently, and thoroughly as a world-class LLM.
