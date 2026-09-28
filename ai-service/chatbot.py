@@ -314,9 +314,10 @@ Remember to conclude with exactly one line in this format:
 SUGGESTIONS: <Question 1 in {target_name}> | <Question 2 in {target_name}> | <Question 3 in {target_name}>
 """
 
-        candidate_models = ["gemini-3.8-flash", "gemini-3.5-flash-lite"]
+        candidate_models = ["gemini-3.5-flash-lite", "gemini-3.6-flash", "gemini-3.8-flash"]
         for model_name in candidate_models:
             try:
+                # 1. Try Interactions API
                 interaction = gemini_client.interactions.create(
                     model=model_name,
                     system_instruction=SYSTEM_INSTRUCTION,
@@ -324,7 +325,13 @@ SUGGESTIONS: <Question 1 in {target_name}> | <Question 2 in {target_name}> | <Qu
                     store=False
                 )
 
-                raw_reply = interaction.output_text
+                raw_reply = getattr(interaction, "output_text", None) or getattr(interaction, "text", None)
+                if not raw_reply and hasattr(interaction, "steps"):
+                    for step in getattr(interaction, "steps", []):
+                        for c in getattr(step, "content", []):
+                            if hasattr(c, "text") and c.text:
+                                raw_reply = (raw_reply or "") + c.text
+
                 if raw_reply and len(raw_reply.strip()) > 0:
                     clean_reply, extracted_sug = parse_suggestions_from_text(raw_reply, current_defaults)
                     return ChatResponse(
@@ -335,7 +342,25 @@ SUGGESTIONS: <Question 1 in {target_name}> | <Question 2 in {target_name}> | <Qu
                         suggestions=extracted_sug
                     )
             except Exception as model_err:
-                print(f"Model {model_name} note: {model_err}")
+                print(f"Model {model_name} interactions note: {model_err}")
+
+            try:
+                # 2. Try Standard generate_content
+                gen_res = gemini_client.models.generate_content(
+                    model=model_name,
+                    contents=f"{SYSTEM_INSTRUCTION}\n\n{prompt_input}"
+                )
+                if gen_res and gen_res.text:
+                    clean_reply, extracted_sug = parse_suggestions_from_text(gen_res.text, current_defaults)
+                    return ChatResponse(
+                        success=True,
+                        reply=clean_reply,
+                        language=lang,
+                        intent=f"GEN_{model_name.upper().replace('-', '_')}",
+                        suggestions=extracted_sug
+                    )
+            except Exception as gen_err:
+                print(f"Model {model_name} generate_content note: {gen_err}")
                 continue
 
     # 2. Local Intent Matcher (Instant, Offline & Resilient Fallback)
