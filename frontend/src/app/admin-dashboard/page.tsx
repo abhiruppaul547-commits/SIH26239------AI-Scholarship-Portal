@@ -1,6 +1,7 @@
 "use client";
 
 import { useEffect, useState } from "react";
+import { useRouter } from "next/navigation";
 import {
   Shield,
   FileCheck,
@@ -14,12 +15,17 @@ import {
   ScanLine,
   AlertCircle,
   Eye,
+  LogOut,
+  Building2,
 } from "lucide-react";
+import axios from "axios";
 import { applicationApi } from "@/lib/api";
 import { useLanguage, translateScheme, translateStatus } from "@/lib/i18n";
 
 export default function AdminDashboard() {
+  const router = useRouter();
   const { t, language } = useLanguage();
+  const [officerSession, setOfficerSession] = useState<any>(null);
   const [applications, setApplications] = useState<any[]>([]);
   const [loading, setLoading] = useState(true);
   const [searchQuery, setSearchQuery] = useState("");
@@ -29,60 +35,119 @@ export default function AdminDashboard() {
   const [updatingId, setUpdatingId] = useState<number | null>(null);
 
   useEffect(() => {
+    const sessionStr = typeof window !== "undefined" ? localStorage.getItem("sih_officer_session") : null;
+    if (!sessionStr) {
+      router.push("/officer-login");
+      return;
+    }
+    try {
+      setOfficerSession(JSON.parse(sessionStr));
+    } catch {
+      router.push("/officer-login");
+      return;
+    }
     loadAllApplications();
-  }, []);
+  }, [router]);
+
+  const handleOfficerLogout = () => {
+    if (typeof window !== "undefined") {
+      localStorage.removeItem("sih_officer_session");
+    }
+    router.push("/officer-login");
+  };
 
   const loadAllApplications = async () => {
     setLoading(true);
     try {
-      const data = await applicationApi.getAllApplications().catch(() => [
-        {
-          id: 1,
-          applicationNumber: "SIH-849120-ST01",
-          studentName: "Birsa Soren",
-          studentEmail: "student@sih.gov.in",
-          tribeName: "Santhal",
-          category: "ST",
-          scholarshipTitle: "National Fellowship and Scholarship for Higher Education of ST Students",
-          scholarshipAmount: 28000,
-          status: "VERIFIED",
-          ocrConfidenceScore: 0.965,
-          ocrVerified: true,
-          appliedAt: new Date().toISOString(),
-          remarks: "Automated OCR parsed ST Certificate & Income Affidavit (₹1,20,000)",
-        },
-        {
-          id: 2,
-          applicationNumber: "SIH-712941-ST02",
-          studentName: "Sunita Munda",
-          studentEmail: "sunita.munda@example.com",
-          tribeName: "Munda",
-          category: "ST",
-          scholarshipTitle: "Post-Matric Scholarship for Scheduled Tribe (ST) Students",
-          scholarshipAmount: 15000,
-          status: "SUBMITTED",
-          ocrConfidenceScore: 0.94,
-          ocrVerified: true,
-          appliedAt: new Date(Date.now() - 86400000).toISOString(),
-          remarks: "Certificate issued by SDO Ranchi. Verification pending officer review.",
-        },
-        {
-          id: 3,
-          applicationNumber: "SIH-391024-ST03",
-          studentName: "Rahul Gond",
-          studentEmail: "rahul.gond@example.com",
-          tribeName: "Gond",
-          category: "ST",
-          scholarshipTitle: "Top Class Education Scheme for ST Students",
-          scholarshipAmount: 85000,
-          status: "APPROVED",
-          ocrConfidenceScore: 0.98,
-          ocrVerified: true,
-          appliedAt: new Date(Date.now() - 172800000).toISOString(),
-          remarks: "IIT Kharagpur admission offer letter verified. DBT payment sanctioned.",
-        },
-      ]);
-      setApplications(data);
+      let combined: any[] = [];
+
+      // 1. Try Firebase Realtime Database for all live student applications
+      try {
+        const fbRes = await axios.get(
+          "https://ai-based-scholarship-portal-default-rtdb.asia-southeast1.firebasedatabase.app/applications.json",
+          { timeout: 7000 }
+        );
+        if (fbRes.data && typeof fbRes.data === "object") {
+          const fbApps = Object.entries(fbRes.data).map(([key, val]: [string, any], idx) => ({
+            id: val.id || idx + 100,
+            applicationNumber: val.applicationNumber || `SIH-RTDB-${key.slice(-6).toUpperCase()}`,
+            studentName: val.studentName || val.applicantName || "Student Applicant",
+            studentEmail: val.studentEmail || val.email || "applicant@portal.gov.in",
+            tribeName: val.tribeName || val.tribe || "ST Community",
+            category: val.category || "ST",
+            scholarshipTitle: val.scholarshipTitle || "Post-Matric Scholarship for ST Students",
+            scholarshipAmount: val.scholarshipAmount || 25000,
+            status: val.status || "VERIFIED",
+            ocrConfidenceScore: val.ocrConfidenceScore || 0.96,
+            ocrVerified: val.ocrVerified !== undefined ? val.ocrVerified : true,
+            appliedAt: val.appliedAt || new Date().toISOString(),
+            remarks: val.remarks || "Awaiting final scrutiny by Ministry Nodal Officer",
+          }));
+          combined.push(...fbApps);
+        }
+      } catch (fbErr) {
+        console.warn("Could not fetch from Firebase RTDB:", fbErr);
+      }
+
+      // 2. Try Backend API
+      try {
+        const data = await applicationApi.getAllApplications();
+        if (Array.isArray(data) && data.length > 0) {
+          combined.push(...data);
+        }
+      } catch {}
+
+      if (combined.length === 0) {
+        combined = [
+          {
+            id: 1,
+            applicationNumber: "SIH-849120-ST01",
+            studentName: "Amitabh Toppo",
+            studentEmail: "amitabh.toppo@example.com",
+            tribeName: "Oraon",
+            category: "ST",
+            scholarshipTitle: "National Fellowship and Scholarship for Higher Education of ST Students",
+            scholarshipAmount: 28000,
+            status: "VERIFIED",
+            ocrConfidenceScore: 0.965,
+            ocrVerified: true,
+            appliedAt: new Date().toISOString(),
+            remarks: "Automated OCR verified ST Certificate & Income Affidavit",
+          },
+          {
+            id: 2,
+            applicationNumber: "SIH-712941-ST02",
+            studentName: "Sunita Munda",
+            studentEmail: "sunita.munda@example.com",
+            tribeName: "Munda",
+            category: "ST",
+            scholarshipTitle: "Post-Matric Scholarship for Scheduled Tribe (ST) Students",
+            scholarshipAmount: 15000,
+            status: "SUBMITTED",
+            ocrConfidenceScore: 0.94,
+            ocrVerified: true,
+            appliedAt: new Date(Date.now() - 86400000).toISOString(),
+            remarks: "Certificate issued by SDO Ranchi. Verification pending officer review.",
+          },
+          {
+            id: 3,
+            applicationNumber: "SIH-391024-ST03",
+            studentName: "Rahul Gond",
+            studentEmail: "rahul.gond@example.com",
+            tribeName: "Gond",
+            category: "ST",
+            scholarshipTitle: "Top Class Education Scheme for ST Students",
+            scholarshipAmount: 85000,
+            status: "APPROVED",
+            ocrConfidenceScore: 0.98,
+            ocrVerified: true,
+            appliedAt: new Date(Date.now() - 172800000).toISOString(),
+            remarks: "IIT Kharagpur admission offer letter verified. DBT payment sanctioned.",
+          },
+        ];
+      }
+
+      setApplications(combined);
     } finally {
       setLoading(false);
     }
@@ -144,10 +209,34 @@ export default function AdminDashboard() {
           <h1 className="text-3xl font-extrabold text-stone-900 dark:text-white tracking-tight">
             {t("adminTitle")}
           </h1>
-          <p className="text-xs sm:text-sm text-stone-500 mt-1">
-            {t("adminSub")}
-          </p>
         </div>
+
+        {/* Officer Profile Badge & Logout */}
+        {officerSession && (
+          <div className="flex items-center gap-3 bg-stone-50 dark:bg-stone-800/80 border border-stone-200 dark:border-stone-700 rounded-2xl p-3 text-xs shadow-xs">
+            <div className="flex h-10 w-10 items-center justify-center rounded-xl bg-orange-100 text-orange-700 dark:bg-orange-950 dark:text-orange-300 shrink-0">
+              <Shield className="h-5 w-5" />
+            </div>
+            <div>
+              <div className="font-bold text-stone-900 dark:text-white flex items-center gap-1.5">
+                {officerSession.fullName || "Nodal Scrutiny Officer"}
+                <span className="text-[10px] font-semibold bg-emerald-100 text-emerald-800 dark:bg-emerald-950 dark:text-emerald-300 px-1.5 py-0.5 rounded-full">
+                  Official
+                </span>
+              </div>
+              <div className="text-[11px] text-stone-500 truncate max-w-[240px]">
+                {officerSession.department || "Ministry of Tribal Affairs"}
+              </div>
+            </div>
+            <button
+              onClick={handleOfficerLogout}
+              className="ml-2 flex items-center gap-1 rounded-xl bg-stone-200 hover:bg-stone-300 dark:bg-stone-700 dark:hover:bg-stone-600 text-stone-800 dark:text-stone-200 px-3 py-1.5 font-bold transition-all cursor-pointer"
+              title="Sign Out of Officer Session"
+            >
+              <LogOut className="h-3.5 w-3.5" /> Exit
+            </button>
+          </div>
+        )}
       </div>
 
       {/* Metrics Row */}

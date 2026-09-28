@@ -9,6 +9,7 @@ import { useAuth } from "@/context/AuthContext";
 
 export default function Navbar() {
   const [currentUser, setCurrentUser] = useState<any>(null);
+  const [hasOfficerSession, setHasOfficerSession] = useState(false);
   const { language, setLanguage, t } = useLanguage();
   const [isLangOpen, setIsLangOpen] = useState(false);
   const { user: firebaseUser, logout: firebaseLogout } = useAuth();
@@ -16,6 +17,9 @@ export default function Navbar() {
   useEffect(() => {
     const user = authApi.getCurrentUser();
     setCurrentUser(user);
+    if (typeof window !== "undefined") {
+      setHasOfficerSession(!!localStorage.getItem("sih_officer_session"));
+    }
   }, []);
 
   const handleLogout = async () => {
@@ -82,7 +86,7 @@ export default function Navbar() {
           <Link href="/dashboard" className="hover:text-orange-600 dark:hover:text-orange-400 transition-colors flex items-center gap-1.5">
             <LayoutDashboard className="h-4 w-4" /> {t("navDashboard")}
           </Link>
-          <Link href="/admin-dashboard" className="hover:text-orange-600 dark:hover:text-orange-400 transition-colors flex items-center gap-1.5">
+          <Link href={hasOfficerSession ? "/admin-dashboard" : "/officer-login"} className="hover:text-orange-600 dark:hover:text-orange-400 transition-colors flex items-center gap-1.5">
             <Shield className="h-4 w-4" /> {t("navAdmin")}
           </Link>
         </nav>
