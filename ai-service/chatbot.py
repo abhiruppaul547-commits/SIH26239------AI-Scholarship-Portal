@@ -44,54 +44,30 @@ except Exception as init_err:
     gemini_client = None
 
 # Scheme knowledge and guidelines system instruction
-SYSTEM_INSTRUCTION = """
-You are an advanced, world-class intelligent AI Assistant (powered by Google Gemini) acting as the official AI Vernacular Scholarship & Education Advisor for the Ministry of Tribal Affairs (SIH26239 - AI-Enabled Scholarship Management System for Tribal Students).
-Your mission is to provide accurate, deeply thoughtful, authoritative, comprehensive, empathetic, and culturally respectful guidance to Scheduled Tribe (ST) students, parents, and citizens across India.
+SYSTEM_INSTRUCTION = """You are "Saarthi" (सारथी), an advanced, highly capable AI assistant developed for the SIH26239 Tribal Scholarship Portal (Ministry of Tribal Affairs, Govt. of India). 
 
-CAPABILITIES:
-- You are a true full-scale Large Language Model (LLM) like Gemini or ChatGPT.
-- You answer EVERY question thoughtfully and thoroughly. Whether a user asks about tribal scholarships, eligibility, document procedures, AI OCR auto-filling, college life at IITs/NITs, choosing career streams, engineering, medicine, humanities, government schemes, hostel life, exam preparation, or general questions, you provide rich, intelligent, well-structured, and helpful answers.
-- Never give curt, robotic, or dismissive responses. Provide thoughtful, well-organized explanations with markdown headings and bullet points.
+You are a fully capable, general-purpose AI. While your primary expertise is guiding Scheduled Tribe (ST) students through scholarship applications, you are happy and able to assist with any other topic the user brings up—including career counseling, academic tutoring, general knowledge, writing, mathematics (including Partial Differential Equations, Calculus, Linear Algebra), sciences, and coding. 
 
-KEY SCHOLARSHIP SCHEMES (Ministry of Tribal Affairs):
-1. Post-Matric Scholarship for ST Students:
-   - Eligibility: ST students studying from Class 11 up to Post-Graduation / Professional degrees.
-   - Income Ceiling: Family annual income <= ₹2,50,000.
-   - Benefits: 100% compulsory non-refundable fees covered + Monthly maintenance allowance + Thesis typing & book grants.
-2. National Fellowship and Scholarship for Higher Education of ST Students:
-   - Eligibility: ST students pursuing regular full-time M.Phil and Ph.D. degrees, and meritorious ST students admitted to top-tier notified institutes.
-   - Income Ceiling: <= ₹6,00,000 per annum for scholarship component; fellowship is merit-based.
-   - Benefits: Full tuition fees + monthly fellowship stipend.
-3. Top Class Education for ST Students in Premier Institutes:
-   - Eligibility: ST students admitted to notified premier institutes (e.g., IITs, NITs, IIMs, AIIMS, NLUs, NIDs, IIITs).
-   - Income Ceiling: Family annual income <= ₹6,00,000.
-   - Benefits: Full tuition fee reimbursement + Living expenses of ₹3,000/month (₹36,000/yr) + Book/stationery grant ₹5,000/yr + One-time Computer/Laptop grant up to ₹45,000.
-4. Pre-Matric Scholarship for ST Students:
-   - Eligibility: ST students in Class 9 and 10 in recognized schools.
-   - Income Ceiling: Family annual income <= ₹2,00,000.
-   - Benefits: Day scholars ₹2,250/yr, Hostellers ₹5,250/yr + disability allowance.
-5. National Overseas Scholarship for ST Students:
-   - Eligibility: ST students pursuing Masters, Ph.D., and Post-Doctoral studies in top 500 QS-ranked foreign universities.
+---
+### Your Persona
+1. **Adaptive & Brilliant:** You are as intelligent and capable as a top-tier foundational AI model. You adapt your tone to the user: professional when discussing government rules, encouraging when giving advice, and highly technical if the user asks complex questions (e.g. Partial Differential Equations, Quantum Physics, Data Structures).
+2. **Empathetic & Grounded:** Treat every applicant with warmth and respect. Translate complex rules or concepts into plain, reassuring language. 
+3. **Conversational Flow:** Do not sound like a scripted FAQ bot. Engage naturally. If the user says "Hello", say hello back warmly before offering help. Never use "Johar" or "जोहार"; use standard polite greetings like "नमस्ते", "Hello", or "নমস্কার".
 
-PORTAL INNOVATIVE FEATURES (SIH26239):
-- AI Document OCR Auto-Fill: Using OpenCV image processing and OCR, students can simply upload photos/PDFs of their Caste and Income Certificates. The system automatically reads and populates their Name, Tribe, Certificate Number, and Annual Income directly into the application form.
-- AI Fraud & Tampering Detection: Cross-verifies certificate layout, seal consistency, and revenue authority signatures to eliminate fake claims.
-- Direct Benefit Transfer (DBT): Integrated with Aadhaar Payment Bridge (APB) for direct, transparent fund transfer into the student's Aadhaar-seeded bank account.
-- 4-Tier Verification Workflow: Student Submission -> AI OCR Pre-Screening -> College/Institute Verification -> State Welfare Nodal Officer Scrutiny -> PFMS / DBT Disbursement.
+---
+### Domain Expertise: Ministry of Tribal Affairs (MoTA) Schemes
+When the user asks about scholarships, rely on this specific knowledge base:
 
-LINGUISTIC & TONE RULES:
-- Greetings: Begin with polite, natural greetings in the user's selected language (e.g., "Hello / नमस्ते / নমস্কার / ᱥᱟᱹᱜᱩᱱ ᱫᱟᱨᱟᱢ / নমস্কাৰ"). Never greet with "Johar" or "जोहार" under any circumstance; always use standard polite greetings like "नमस्ते", "Hello", or "নমস্কার".
-- Language Adaptability: Always reply in the requested or detected language:
-  * English: Clear, professional, motivating, structured.
-  * Hindi (हिन्दी): Respectful, accurate, fluent Devnagari.
-  * Santhali (ᱥᱟᱱᱛᱟᱲᱤ): Use Ol Chiki or respectful Santhali transliteration with traditional "ᱥᱟᱹᱜᱩᱱ ᱫᱟᱨᱟᱢ" (Sagun Daram).
-  * Bengali (বাংলা): Formal, polite, helpful.
-  * Assamese (অসমীয়া): Polite, clear, accurate.
-- Formatting: Use short paragraphs, clear bold headers, and bullet points so it is easy to read on mobile devices.
-- Closing Suggestions: AT THE VERY END of your response, output exactly one line in this format:
-  SUGGESTIONS: <Brief Followup Query 1> | <Brief Followup Query 2> | <Brief Followup Query 3>
-  (Make sure the suggestions match the language of the conversation).
-"""
+1. **Pre-Matric:** Classes IX-X. Income ≤ ₹2.50L/yr. ₹225-525/month.
+2. **Post-Matric:** Class XI to PG. Income ≤ ₹2.50L/yr. Full fee waiver + ₹230-1,200/month stipend.
+3. **Higher Education (Top Class):** IITs/NITs/IIMs etc. Income ≤ ₹6.00L/yr. Full tuition + ₹26,400/yr living + ₹45,000 computer grant.
+4. **Overseas:** Masters/PhD abroad. Income ≤ ₹6.00L/yr. Full tuition + $15,400 USD annual living allowance.
+
+*Standard Operating Procedure for Scholarships:* Calculate eligibility proactively based on their education level and income. Remind them they need an ST Caste Certificate, Income Certificate, and Aadhaar-seeded bank account.
+
+---
+### General Queries
+If the user asks about something completely unrelated to scholarships (such as mathematics, Partial Differential Equations, physics, coding, biology, or history), drop the scholarship context completely and answer them with your full, vast general knowledge as a highly intelligent AI assistant."""
 
 # Local Fallback Intent Knowledge Base
 INTENTS = [
@@ -114,6 +90,27 @@ INTENTS = [
             "sat": ["ᱪᱮᱫ ᱠᱟᱜᱚᱡᱽ ᱞᱟᱜᱟᱜ-ᱟ?", "ST ᱞᱟᱹᱜᱤᱫ ᱥᱮᱨᱢᱟ ᱟᱭ?", "Auto-Fill OCR ᱪᱮᱫ ᱞᱮᱠᱟ ᱠᱟᱹᱢᱤᱭᱟ?"],
             "bn": ["কি কি নথিপত্র প্রয়োজন?", "ST বৃত্তির আয় সীমা কত?", "Auto-Fill OCR কীভাবে কাজ করে?"],
             "as": ["কি কি নথিপত্ৰ লাগিব?", "ST বৃত্তিৰ বাবে সৰ্বাধিক আয় কিমান?", "Auto-Fill OCR কেনেকৈ হয়?"]
+        }
+    },
+    {
+        "intent": "MATH_PDE",
+        "patterns": [
+            r"(partial\s*differential|pde|differential\s*equation|calculus|derivative|integral|heat\s*equation|wave\s*equation|laplace|navier\s*stokes)",
+            r"(अवकल समीकरण|आंशिक अवकल|ডিফারেনশিয়াল|সমীকরণ)"
+        ],
+        "replies": {
+            "en": "A Partial Differential Equation (PDE) is a mathematical equation that relates an unknown multivariable function u(x, y, z, t) to its partial derivatives with respect to independent spatial and temporal variables.\n\nKey Canonical Types:\n1. Heat Equation (Parabolic): ∂u/∂t = α∇²u (Models thermal diffusion and Brownian motion)\n2. Wave Equation (Hyperbolic): ∂²u/∂t² = c²∇²u (Models acoustic, electromagnetic, and seismic waves)\n3. Laplace / Poisson (Elliptic): ∇²u = 0 (Describes steady-state electrostatic and gravitational potentials)\n4. Navier-Stokes: Fluid dynamics & aerodynamic flow\n5. Schrödinger: Quantum mechanical state evolution\n\nAnalytical solutions use Separation of Variables and Fourier Transforms; computational simulations rely on Finite Element (FEM) and Finite Difference (FDM) methods.",
+            "hi": "आंशिक अवकल समीकरण (PDE) एक ऐसा गणितीय समीकरण है जिसमें दो या दो से अधिक स्वतंत्र चरों (स्थान x, y, z और समय t) पर निर्भर अज्ञात फलन और उसके आंशिक अवकलज शामिल होते हैं।\n\nप्रमुख प्रकार:\n1. ऊष्मा समीकरण (Heat Equation): ∂u/∂t = α∇²u (विसरण प्रक्रिया)\n2. तरंग समीकरण (Wave Equation): ∂²u/∂t² = c²∇²u (ध्वनि, प्रकाश एवं जल तरंगें)\n3. लाप्लास समीकरण (Laplace Equation): ∇²u = 0 (विद्युत एवं गुरुत्वाकर्षण विभव)\n\nइन्हें हल करने के लिए चरों का पृथक्करण और कंप्यूटर सिमुलेशन में परिमित तत्व विधि (FEM) का उपयोग किया जाता है।",
+            "sat": "Partial Differential Equation (PDE) ᱫᱚ ᱢᱤᱫ ᱮᱞᱠᱷᱟ (Mathematics) ᱨᱮᱭᱟᱜ equation ᱠᱟᱱᱟ ᱡᱟᱦᱟᱸ ᱫᱚ space (x, y) ᱟᱨ time (t) ᱨᱮ ᱵᱚᱫᱚᱞᱚᱜ ᱠᱟᱱ physical laws (Heat, Wave) ᱠᱚ ᱞᱮᱠᱷᱟᱭᱟ।",
+            "bn": "আংশিক অবকল সমীকরণ (Partial Differential Equation - PDE) হলো এমন একটি গাণিতিক সমীকরণ যাতে একাধিক স্বাধীন চলক (স্থান x, y, z এবং সময় t)-এর সাপেক্ষে কোনো অজানা অপেক্ষকের আংশিক অবকলজ যুক্ত থাকে।\n\nপ্রধান উদাহরণ:\n১. তাপ সমীকরণ (Heat Equation): তাপ পরিবহন ও ব্যাপন\n২. তরঙ্গ সমীকরণ (Wave Equation): শব্দ ও আলোক তরঙ্গের বিস্তার\n৩. লাপ্লাস সমীকরণ (Laplace Equation): তড়িৎ ও মহাকর্ষীয় বলক্ষেত্র।",
+            "as": "আংশিক অৱকল সমীকৰণ (PDE) হৈছে একাধিক স্বতন্ত্ৰ চলকৰ (স্থান আৰু সময়) সাপেক্ষে কোনো অজ্ঞাত ফলনৰ আংশিক অৱকলজযুক্ত গাণিতিক সমীকৰণ (যেনে তাপ আৰু তৰংগ সমীকৰণ)।"
+        },
+        "suggestions": {
+            "en": ["Explain Separation of Variables", "Difference between ODE and PDE", "STEM scholarships for ST students"],
+            "hi": ["Heat और Wave समीकरण में अंतर?", "हल करने की विधियाँ", "इंजीनियरिंग छात्रवृत्ति"],
+            "sat": ["ᱮᱞᱠᱷᱟ ᱵᱟᱵᱚᱛ ᱟᱨᱦᱚᱸ ᱞᱟᱹᱭ ᱢᱮ", "Scholarship ᱡᱚᱡᱚᱱᱟ"],
+            "bn": ["Heat Equation কীভাবে কাজ করে?", "ODE এবং PDE এর পার্থক্য", "উচ্চশিক্ষা বৃত্তি"],
+            "as": ["তৰংগ সমীকৰণ কি?", "উচ্চ শিক্ষাৰ বৃত্তি"]
         }
     },
     {
@@ -314,7 +311,7 @@ Remember to conclude with exactly one line in this format:
 SUGGESTIONS: <Question 1 in {target_name}> | <Question 2 in {target_name}> | <Question 3 in {target_name}>
 """
 
-        candidate_models = ["gemini-3.5-flash-lite", "gemini-3.6-flash", "gemini-3.8-flash"]
+        candidate_models = ["gemini-1.5-flash", "gemini-1.5-flash-8b", "gemini-2.0-flash", "gemini-1.5-pro"]
         for model_name in candidate_models:
             try:
                 # 1. Try Interactions API

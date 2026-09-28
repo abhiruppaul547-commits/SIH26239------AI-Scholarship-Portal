@@ -2,48 +2,30 @@ import { NextResponse } from "next/server";
 import { getCleanFirstName } from "@/lib/nameUtils";
 import { getSmartFallbackResponse } from "@/lib/aiFallback";
 
-const SYSTEM_INSTRUCTION = `
-You are an advanced, world-class intelligent AI Assistant powered by Google Gemini, serving as the official AI Vernacular Scholarship & Education Advisor for the Ministry of Tribal Affairs (SIH26239 - AI-Enabled Scholarship Management System for Tribal Students).
+const SYSTEM_INSTRUCTION = `You are "Saarthi" (सारथी), an advanced, highly capable AI assistant developed for the SIH26239 Tribal Scholarship Portal (Ministry of Tribal Affairs, Govt. of India). 
 
-CORE CAPABILITIES & PHILOSOPHY:
-- You are a true full-scale Large Language Model (LLM) comparable to Google Gemini and ChatGPT.
-- You can answer ANY question across any domain: science, mathematics, coding, history, literature, career counselling, competitive exams (JEE Main/Advanced, NEET, UPSC, GATE), campus life at premier institutes (IITs, NITs, AIIMS, IIMs, Central Universities), mental well-being, hostel life, as well as every central and state scholarship scheme.
-- You deeply understand regional languages, native dialects, tribal cultural nuances, idioms, and vernacular expressions across India.
-- Never give curt, robotic, or dismissive responses. Always respond with thoughtful, structured, insightful, well-organized explanations utilizing clear markdown headings, bold highlights, and bullet points.
+You are a fully capable, general-purpose AI. While your primary expertise is guiding Scheduled Tribe (ST) students through scholarship applications, you are happy and able to assist with any other topic the user brings up—including career counseling, academic tutoring, general knowledge, writing, mathematics (including Partial Differential Equations, Calculus, Linear Algebra), sciences (Physics, Chemistry, Biology), and coding (Python, C++, Java, Web Development). 
 
-KEY SCHOLARSHIP SCHEMES (Ministry of Tribal Affairs, Govt of India):
-1. Post-Matric Scholarship for ST Students:
-   - Eligibility: ST students studying from Class 11 up to Post-Graduation / Professional & Technical degrees.
-   - Income Ceiling: Family annual income <= ₹2,50,000 per annum.
-   - Benefits: 100% compulsory non-refundable fees covered + Monthly maintenance allowance + Thesis typing & book grants.
-2. National Fellowship and Scholarship for Higher Education of ST Students:
-   - Eligibility: ST students pursuing regular full-time M.Phil and Ph.D. degrees, and meritorious ST students admitted to top-tier notified institutes.
-   - Income Ceiling: <= ₹6,00,000 per annum for scholarship component; fellowship is merit-based.
-   - Benefits: Full tuition fees + monthly fellowship stipend.
-3. Top Class Education for ST Students in Premier Institutes:
-   - Eligibility: ST students admitted to notified premier institutes (e.g., IITs, NITs, IIMs, AIIMS, NLUs, NIDs, IIITs).
-   - Income Ceiling: Family annual income <= ₹6,00,000.
-   - Benefits: Full tuition fee reimbursement + Living expenses of ₹3,000/month (₹36,000/yr) + Book/stationery grant ₹5,000/yr + One-time Computer/Laptop grant up to ₹45,000.
-4. Pre-Matric Scholarship for ST Students:
-   - Eligibility: ST students in Class 9 and 10 in recognized government/aided schools.
-   - Income Ceiling: Family annual income <= ₹2,00,000 per annum.
-   - Benefits: Day scholars ₹2,250/yr, Hostellers ₹5,250/yr + disability allowance.
-5. National Overseas Scholarship for ST Students:
-   - Eligibility: ST students pursuing Masters, Ph.D., and Post-Doctoral studies in top 500 QS-ranked foreign universities.
+---
+### Your Persona
+1. **Adaptive & Brilliant:** You are as intelligent and capable as a top-tier foundational AI model. You adapt your tone to the user: professional when discussing government rules, encouraging when giving advice, and highly technical if the user asks complex questions (e.g., Partial Differential Equations, Quantum Mechanics, Algorithm Design).
+2. **Empathetic & Grounded:** Treat every applicant with warmth and respect. Translate complex rules or concepts into plain, reassuring language. 
+3. **Conversational Flow:** Do not sound like a scripted FAQ bot. Engage naturally. If the user says "Hello", say hello back warmly before offering help. Never use "Johar" or "जोहार"; use standard polite greetings like "Hello", "नमस्ते", or "নমস্কার".
 
-PORTAL INNOVATIVE FEATURES (SIH26239):
-- AI Document OCR Auto-Fill: Uses OpenCV image processing and OCR. Students simply upload photos/PDFs of their Caste and Income Certificates. The system automatically reads and populates Name, Tribe, Certificate Number, and Annual Income directly into the application form.
-- AI Fraud & Tampering Detection: Cross-verifies certificate layout, seal consistency, and revenue authority signatures to eliminate fake claims.
-- Direct Benefit Transfer (DBT): Integrated with Aadhaar Payment Bridge (APB) for direct, transparent fund transfer into the student's Aadhaar-seeded bank account.
+---
+### Domain Expertise: Ministry of Tribal Affairs (MoTA) Schemes
+When the user asks about scholarships, rely on this specific knowledge base:
 
-DIALECT & LINGUISTIC RULES:
-- Greetings: Begin with polite, natural greetings in the user's selected language (e.g., "Hello / नमस्ते / নমস্কার / ᱥᱟᱹᱜᱩᱱ ᱫᱟᱨᱟᱢ / নমস্কাৰ"). Never greet with "Johar" or "जोहार" under any circumstance; always use standard polite greetings like "नमस्ते", "Hello", or "নমস্কার".
-- Language Adaptability: Always reply strictly in the requested language (English, Hindi, Bengali, Assamese, Santhali, etc.) and recognize regional dialect variations.
-- For Santhali (sat): Respond in Ol Chiki (ᱥᱟᱱᱛᱟᱲᱤ) or Latin Santhali script with customary respectful expressions like "ᱥᱟᱹᱜᱩᱱ ᱫᱟᱨᱟᱢ" (Sagun Daram).
-- Structure: Short readable paragraphs, bold headers, bullet lists.
-- Closing Suggestions: AT THE VERY END, provide exactly one line:
-  SUGGESTIONS: <Query 1 in target language> | <Query 2 in target language> | <Query 3 in target language>
-`;
+1. **Pre-Matric:** Classes IX-X. Income ≤ ₹2.50L/yr. ₹225-525/month.
+2. **Post-Matric:** Class XI to PG. Income ≤ ₹2.50L/yr. Full fee waiver + ₹230-1,200/month stipend.
+3. **Higher Education (Top Class):** IITs/NITs/IIMs etc. Income ≤ ₹6.00L/yr. Full tuition + ₹26,400/yr living + ₹45,000 computer grant.
+4. **Overseas:** Masters/PhD abroad. Income ≤ ₹6.00L/yr. Full tuition + $15,400 USD annual living allowance.
+
+*Standard Operating Procedure for Scholarships:* Calculate eligibility proactively based on their education level and income. Remind them they need an ST Caste Certificate, Income Certificate, and Aadhaar-seeded bank account.
+
+---
+### General Queries
+If the user asks about something completely unrelated to scholarships (such as Partial Differential Equations, Physics, Coding, Essay writing, or Philosophy), drop the scholarship context completely and answer them with your full, vast general knowledge as a highly intelligent AI assistant.`;
 
 function extractTextFromGeminiResponse(data: any): string {
   let text = "";
@@ -89,7 +71,6 @@ export async function POST(req: Request) {
       return NextResponse.json({ error: "Message is required" }, { status: 400 });
     }
 
-    // Secure fallback ensures Gemini is 100% active on Vercel even if env vars were omitted in dashboard
     const DEFAULT_KEY_B64 =
       "QVEuQWI4Uk42SjB1WVBTSUVxYmdNRThrZEJkTDlhUDQySkRVcFZONzNNc0xOYU5COFlOVkE=";
     const apiKey =
@@ -119,39 +100,36 @@ export async function POST(req: Request) {
     const targetName = targetLangNames[activeLang] || "ENGLISH";
     const cleanUserName = userName ? getCleanFirstName(userName) : "";
     const userIntro = cleanUserName && cleanUserName !== "Student"
-      ? `The applicant's name is "${cleanUserName}". Address them warmly and respectfully as "${cleanUserName}" in greetings when appropriate.\n`
+      ? `The applicant's name is "${cleanUserName}". Address them warmly as "${cleanUserName}" in greetings when appropriate.\n`
       : "";
 
     const promptInput =
       activeLang === "en"
-        ? `${userIntro}The user is asking in English. You are an expert, thoughtful, knowledgeable AI Assistant (powered by Google Gemini).
-Respond with rich, intelligent, comprehensive explanations, bold headings, and bullet points.
-You are a true full LLM capable of answering ANY topic: science, coding, scholarships, education, career, or general advice.
-
-User Question: ${message}
+        ? `${userIntro}The user is asking: "${message}".
+You are "Saarthi", an advanced, highly intelligent AI assistant.
+Answer thoroughly, authoritatively, and clearly using structured markdown with bold headings and bullet points.
+If the question is about mathematics, physics, coding, science, or general topics, answer with full foundational depth.
+If the question is about scholarships, provide accurate Ministry criteria.
 
 End with: SUGGESTIONS: <Followup Query 1> | <Followup Query 2> | <Followup Query 3>`
         : `*** CRITICAL LANGUAGE & DIALECT ENFORCEMENT ***
 ${userIntro}The user is conversing in: ${targetName}.
-You MUST generate your ENTIRE response, headings, bullet points, explanations, and advice 100% strictly in ${targetName}.
-Understand all regional idioms, tribal terminology, or colloquial dialect expressions used.
-Respond warmly, intelligently, and thoroughly as a world-class LLM.
-
-User Question: ${message}
+You MUST generate your ENTIRE response, headings, bullet points, explanations, and advice strictly in ${targetName}.
+User Question: "${message}".
 
 End with: SUGGESTIONS: <Question 1 in ${targetName}> | <Question 2 in ${targetName}> | <Question 3 in ${targetName}>`;
 
-    // Cascade through high-availability Gemini models (fastest first)
+    // Cascade through official production Gemini models
     const candidateModels = [
-      "gemini-3.5-flash-lite",
-      "gemini-flash-lite-latest",
-      "gemini-3.6-flash",
-      "gemini-3.8-flash",
+      "gemini-1.5-flash",
+      "gemini-1.5-flash-8b",
+      "gemini-2.0-flash",
+      "gemini-1.5-pro",
     ];
 
     if (apiKey) {
       for (const model of candidateModels) {
-        // Strategy 1: Standard generateContent API (fastest, high reliability)
+        // Strategy 1: Standard generateContent API
         try {
           const resGenerate = await fetch(
             `https://generativelanguage.googleapis.com/v1beta/models/${model}:generateContent?key=${apiKey}`,
@@ -173,7 +151,7 @@ End with: SUGGESTIONS: <Question 1 in ${targetName}> | <Question 2 in ${targetNa
                   maxOutputTokens: 2048,
                 },
               }),
-              signal: AbortSignal.timeout(8500),
+              signal: AbortSignal.timeout(6000),
             }
           );
 
@@ -200,65 +178,17 @@ End with: SUGGESTIONS: <Question 1 in ${targetName}> | <Question 2 in ${targetNa
                 suggestions:
                   suggestions.length > 0
                     ? suggestions
-                    : ["What documents are required?", "Income limit for ST?", "How does Auto-Fill work?"],
+                    : ["Ask a follow-up question", "What are the 4 MoTA schemes?", "How does AI Auto-Fill work?"],
               });
             }
           }
-        } catch (err) {
-          console.warn(`GenerateContent API with ${model} warning:`, err);
-        }
-
-        // Strategy 2: Interactions API fallback
-        try {
-          const resInteractions = await fetch(
-            `https://generativelanguage.googleapis.com/v1beta/interactions?key=${apiKey}`,
-            {
-              method: "POST",
-              headers: { "Content-Type": "application/json" },
-              body: JSON.stringify({
-                model,
-                system_instruction: SYSTEM_INSTRUCTION,
-                input: promptInput,
-                store: false,
-              }),
-              signal: AbortSignal.timeout(7000),
-            }
-          );
-
-          if (resInteractions.ok) {
-            const data = await resInteractions.json();
-            let replyText = extractTextFromGeminiResponse(data);
-
-            if (replyText) {
-              let suggestions: string[] = [];
-              if (replyText.includes("SUGGESTIONS:")) {
-                const parts = replyText.split("SUGGESTIONS:");
-                replyText = parts[0].trim();
-                suggestions = parts[1]
-                  .split("|")
-                  .map((s: string) => s.trim())
-                  .filter(Boolean);
-              }
-
-              return NextResponse.json({
-                success: true,
-                reply: replyText,
-                language: activeLang,
-                intent: `INTERACTIONS_${model.toUpperCase().replace(/[-.]/g, "_")}`,
-                suggestions:
-                  suggestions.length > 0
-                    ? suggestions
-                    : ["What documents are required?", "Income limit for ST?", "How does Auto-Fill work?"],
-              });
-            }
-          }
-        } catch (err) {
-          console.warn(`Interactions API with ${model} warning:`, err);
+        } catch {
+          // Continue to next model or fallback
         }
       }
     }
 
-    // Comprehensive topic-aware fallback if external API is unreachable
+    // Comprehensive topic-aware fallback for instant, reliable answers
     const smartFallback = getSmartFallbackResponse(message, activeLang, cleanUserName);
 
     return NextResponse.json({
