@@ -18,12 +18,14 @@ import {
 import { scholarshipApi, applicationApi, authApi } from "@/lib/api";
 import FileUploader from "@/components/FileUploader";
 import { useLanguage, translateScheme } from "@/lib/i18n";
+import { useAuth } from "@/context/AuthContext";
 
 function ApplyForm() {
   const router = useRouter();
   const searchParams = useSearchParams();
   const initialSchemeId = searchParams.get("schemeId");
   const { t, language } = useLanguage();
+  const { user: authUser } = useAuth();
 
   const [schemes, setSchemes] = useState<any[]>([]);
   const [selectedSchemeId, setSelectedSchemeId] = useState<string>(initialSchemeId || "");
@@ -35,24 +37,24 @@ function ApplyForm() {
 
   const ocrFileInputRef = useRef<HTMLInputElement>(null);
 
-  // Form Fields
+  // Form Fields - clean initial state for real students
   const [formData, setFormData] = useState({
-    fullName: "Birsa Soren",
-    email: "student@sih.gov.in",
-    phone: "+91 9123456780",
+    fullName: "",
+    email: "",
+    phone: "",
     category: "ST",
-    tribeName: "Santhal",
-    annualFamilyIncome: "120000",
-    institutionName: "National Institute of Technology Jamshedpur",
-    course: "B.Tech Computer Science",
-    currentYear: "3rd Year",
-    gpaOrPercentage: "82.5",
-    bankAccountNumber: "349281729012",
-    bankIfsc: "SBIN0001234",
-    aadhaarNumber: "5678-1234-9012",
-    casteDocFileName: "caste_certificate_jharkhand.pdf",
-    incomeDocFileName: "income_affidavit_2024.pdf",
-    marksheetDocFileName: "semester_marksheet.pdf",
+    tribeName: "",
+    annualFamilyIncome: "",
+    institutionName: "",
+    course: "",
+    currentYear: "1st Year",
+    gpaOrPercentage: "",
+    bankAccountNumber: "",
+    bankIfsc: "",
+    aadhaarNumber: "",
+    casteDocFileName: "",
+    incomeDocFileName: "",
+    marksheetDocFileName: "",
   });
 
   useEffect(() => {
@@ -65,15 +67,23 @@ function ApplyForm() {
       }
     });
 
-    const user = authApi.getCurrentUser();
-    if (user) {
+    const localUser = authApi.getCurrentUser();
+    const activeName =
+      (authUser?.displayName && authUser.displayName !== "Birsa Soren" ? authUser.displayName : "") ||
+      (localUser?.fullName && localUser.fullName !== "Birsa Soren" ? localUser.fullName : "") ||
+      (authUser?.email && !authUser.email.includes("student@sih.gov.in") ? authUser.email.split("@")[0] : "");
+    const activeEmail =
+      (authUser?.email && !authUser.email.includes("student@sih.gov.in") ? authUser.email : "") ||
+      (localUser?.email && !localUser.email.includes("student@sih.gov.in") ? localUser.email : "");
+
+    if (activeName || activeEmail) {
       setFormData((prev) => ({
         ...prev,
-        fullName: user.fullName || prev.fullName,
-        email: user.email || prev.email,
+        fullName: prev.fullName || activeName,
+        email: prev.email || activeEmail,
       }));
     }
-  }, [selectedSchemeId]);
+  }, [selectedSchemeId, authUser]);
 
   // Handler for "Auto-Fill from Document" OCR feature
   const handleOcrUpload = async (file: File) => {
@@ -206,7 +216,7 @@ function ApplyForm() {
                 <input
                   type="file"
                   ref={ocrFileInputRef}
-                  accept="image/png,image/jpeg,application/pdf"
+                  accept="image/png,image/jpeg,image/jpg,image/webp,application/pdf"
                   className="hidden"
                   onChange={(e) => {
                     if (e.target.files && e.target.files[0]) {
@@ -217,7 +227,12 @@ function ApplyForm() {
                 <button
                   type="button"
                   disabled={isOcrProcessing}
-                  onClick={() => ocrFileInputRef.current?.click()}
+                  onClick={() => {
+                    if (ocrFileInputRef.current) {
+                      ocrFileInputRef.current.value = "";
+                    }
+                    ocrFileInputRef.current?.click();
+                  }}
                   className="flex items-center gap-2 rounded-2xl bg-gradient-to-r from-orange-600 to-amber-600 px-5 py-3 text-xs sm:text-sm font-bold text-white shadow-md shadow-orange-600/30 hover:from-orange-500 hover:to-amber-500 active:scale-95 disabled:opacity-50 transition-all cursor-pointer"
                 >
                   {isOcrProcessing ? (
@@ -333,6 +348,7 @@ function ApplyForm() {
                     required
                     value={formData.fullName}
                     onChange={(e) => setFormData({ ...formData, fullName: e.target.value })}
+                    placeholder="Enter your full name"
                     className="w-full rounded-xl border border-stone-300 dark:border-stone-700 bg-stone-50 dark:bg-stone-800/50 p-2.5 text-stone-900 dark:text-white outline-hidden focus:border-orange-500"
                   />
                 </div>
@@ -344,6 +360,7 @@ function ApplyForm() {
                     required
                     value={formData.email}
                     onChange={(e) => setFormData({ ...formData, email: e.target.value })}
+                    placeholder="Enter your email"
                     className="w-full rounded-xl border border-stone-300 dark:border-stone-700 bg-stone-50 dark:bg-stone-800/50 p-2.5 text-stone-900 dark:text-white outline-hidden focus:border-orange-500"
                   />
                 </div>
@@ -367,7 +384,7 @@ function ApplyForm() {
                     type="text"
                     value={formData.tribeName}
                     onChange={(e) => setFormData({ ...formData, tribeName: e.target.value })}
-                    placeholder="Santhal / Gond / Bhil / Munda / Bodo"
+                    placeholder="e.g. Santhal / Gond / Bhil / Munda / Bodo"
                     className="w-full rounded-xl border border-stone-300 dark:border-stone-700 bg-stone-50 dark:bg-stone-800/50 p-2.5 text-stone-900 dark:text-white outline-hidden focus:border-orange-500"
                   />
                 </div>
@@ -379,6 +396,7 @@ function ApplyForm() {
                     required
                     value={formData.annualFamilyIncome}
                     onChange={(e) => setFormData({ ...formData, annualFamilyIncome: e.target.value })}
+                    placeholder="e.g. 120000"
                     className="w-full rounded-xl border border-stone-300 dark:border-stone-700 bg-stone-50 dark:bg-stone-800/50 p-2.5 text-stone-900 dark:text-white outline-hidden focus:border-orange-500"
                   />
                 </div>
@@ -411,6 +429,7 @@ function ApplyForm() {
                     required
                     value={formData.institutionName}
                     onChange={(e) => setFormData({ ...formData, institutionName: e.target.value })}
+                    placeholder="e.g. National Institute of Technology"
                     className="w-full rounded-xl border border-stone-300 dark:border-stone-700 bg-stone-50 dark:bg-stone-800/50 p-2.5 text-stone-900 dark:text-white outline-hidden focus:border-orange-500"
                   />
                 </div>
@@ -422,6 +441,7 @@ function ApplyForm() {
                     required
                     value={formData.course}
                     onChange={(e) => setFormData({ ...formData, course: e.target.value })}
+                    placeholder="e.g. B.Tech Computer Science"
                     className="w-full rounded-xl border border-stone-300 dark:border-stone-700 bg-stone-50 dark:bg-stone-800/50 p-2.5 text-stone-900 dark:text-white outline-hidden focus:border-orange-500"
                   />
                 </div>
@@ -433,6 +453,7 @@ function ApplyForm() {
                     required
                     value={formData.bankAccountNumber}
                     onChange={(e) => setFormData({ ...formData, bankAccountNumber: e.target.value })}
+                    placeholder="Enter bank account number"
                     className="w-full rounded-xl border border-stone-300 dark:border-stone-700 bg-stone-50 dark:bg-stone-800/50 p-2.5 text-stone-900 dark:text-white outline-hidden focus:border-orange-500"
                   />
                 </div>
@@ -444,6 +465,7 @@ function ApplyForm() {
                     required
                     value={formData.bankIfsc}
                     onChange={(e) => setFormData({ ...formData, bankIfsc: e.target.value })}
+                    placeholder="e.g. SBIN0001234"
                     className="w-full rounded-xl border border-stone-300 dark:border-stone-700 bg-stone-50 dark:bg-stone-800/50 p-2.5 text-stone-900 dark:text-white outline-hidden focus:border-orange-500"
                   />
                 </div>

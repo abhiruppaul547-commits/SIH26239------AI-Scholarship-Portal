@@ -183,7 +183,7 @@ function AuthForm() {
                     required
                     value={regData.fullName}
                     onChange={(e) => setRegData({ ...regData, fullName: e.target.value })}
-                    placeholder="Birsa Soren"
+                    placeholder="e.g. Ramesh Chandra Murmu"
                     className="w-full rounded-xl border border-stone-300 dark:border-stone-700 bg-stone-50 dark:bg-stone-800/50 py-2 pl-10 pr-3 text-stone-900 dark:text-white outline-hidden focus:border-orange-500"
                   />
                 </div>
@@ -197,7 +197,7 @@ function AuthForm() {
                     required
                     value={regData.email}
                     onChange={(e) => setRegData({ ...regData, email: e.target.value })}
-                    placeholder="birsa@example.com"
+                    placeholder="student@example.com"
                     className="w-full rounded-xl border border-stone-300 dark:border-stone-700 bg-stone-50 dark:bg-stone-800/50 py-2 px-3 text-stone-900 dark:text-white outline-hidden focus:border-orange-500"
                   />
                 </div>

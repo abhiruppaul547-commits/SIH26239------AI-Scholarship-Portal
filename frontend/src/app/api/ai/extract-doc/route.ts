@@ -48,7 +48,15 @@ export async function POST(req: Request) {
     const arrayBuffer = await file.arrayBuffer();
     const buffer = Buffer.from(arrayBuffer);
     const base64Data = buffer.toString("base64");
-    const mimeType = file.type || "image/jpeg";
+
+    let mimeType = file.type;
+    if (!mimeType || mimeType === "application/octet-stream") {
+      const lower = (file.name || "").toLowerCase();
+      if (lower.endsWith(".png")) mimeType = "image/png";
+      else if (lower.endsWith(".pdf")) mimeType = "application/pdf";
+      else if (lower.endsWith(".webp")) mimeType = "image/webp";
+      else mimeType = "image/jpeg";
+    }
 
     const DEFAULT_KEY_B64 =
       "QVEuQWI4Uk42SjB1WVBTSUVxYmdNRThrZEJkTDlhUDQySkRVcFZONzNNc0xOYU5COFlOVkE=";

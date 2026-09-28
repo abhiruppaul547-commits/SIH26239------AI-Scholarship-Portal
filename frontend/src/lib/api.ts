@@ -113,25 +113,29 @@ export const applicationApi = {
 
     // 1. Try Next.js serverless route (/api/ai/extract-doc) which runs directly in production with Gemini Vision
     try {
-      const res = await axios.post("/api/ai/extract-doc", formData, {
-        headers: { "Content-Type": "multipart/form-data" },
-        timeout: 45000,
+      const res = await fetch("/api/ai/extract-doc", {
+        method: "POST",
+        body: formData,
       });
-      if (res.data && res.data.success) {
-        return res.data;
+      if (res.ok) {
+        const data = await res.json();
+        if (data && data.success) {
+          return data;
+        }
       }
     } catch (e: any) {
       console.warn("Direct Next.js AI OCR failed, attempting backend tunnel...", e?.message);
     }
 
     // 2. Fallback to Spring Boot / FastAPI backend tunnel
-    const res = await api.post("/applications/extract-doc", formData, {
-      headers: {
-        "Content-Type": "multipart/form-data",
-      },
-      timeout: 30000,
-    });
-    return res.data;
+    try {
+      const res = await api.post("/applications/extract-doc", formData, {
+        timeout: 30000,
+      });
+      return res.data;
+    } catch (backendErr: any) {
+      throw new Error(backendErr.response?.data?.message || "Document OCR extraction failed. Please ensure the document is clear.");
+    }
   },
 };
 
