@@ -12,8 +12,8 @@ CRITICAL INSTRUCTIONS:
 2. DO NOT make up, assume, or hallucinate names, numbers, or dates.
 3. If a specific field is not present on the document, set its value to null.
 4. Extract the annual income as a numeric value in Indian Rupees (e.g., 120000) if explicitly mentioned.
-5. Identify the caste category (ST, SC, OBC, or General). For tribal certificates, this is typically "ST".
-6. Extract the specific tribe/community if mentioned (e.g., Santhal, Gond, Bhil, Munda, Oraon, Bodo, Khasi, Garo, Ho, Baiga, etc.).
+5. Identify the caste category (ST, SC, OBC, or General) ONLY IF this document is explicitly a Caste/Community Certificate or explicitly certifies caste. If this is an Income Certificate, Salary Slip, Marksheet, or does not certify caste, return null.
+6. Extract the specific tribe/community if explicitly certified. If not mentioned or if this is an Income Certificate, return null.
 
 Return a strictly valid JSON object matching this schema:
 {
@@ -158,8 +158,8 @@ export async function POST(req: Request) {
       name: extractedJson.name || null,
       fullName: extractedJson.name || null,
       fatherName: extractedJson.fatherName || null,
-      casteCategory: extractedJson.casteCategory || "ST",
-      caste_category: extractedJson.casteCategory || "ST",
+      casteCategory: extractedJson.casteCategory || null,
+      caste_category: extractedJson.casteCategory || null,
       tribe: extractedJson.tribe || null,
       tribeName: extractedJson.tribe || null,
       incomeValue: extractedJson.incomeValue ? Number(extractedJson.incomeValue) : null,

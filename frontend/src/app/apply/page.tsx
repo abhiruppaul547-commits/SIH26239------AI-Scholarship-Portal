@@ -36,14 +36,18 @@ function ApplyForm() {
   const [submissionSuccess, setSubmissionSuccess] = useState<any>(null);
   const [errorMsg, setErrorMsg] = useState("");
 
+  const [casteFile, setCasteFile] = useState<File | null>(null);
+  const [incomeFile, setIncomeFile] = useState<File | null>(null);
+  const [marksheetFile, setMarksheetFile] = useState<File | null>(null);
+
   const ocrFileInputRef = useRef<HTMLInputElement>(null);
 
-  // Form Fields - clean initial state for real students
+  // Form Fields - clean initial state for real students (category is empty until verified)
   const [formData, setFormData] = useState({
     fullName: "",
     email: "",
     phone: "",
-    category: "ST",
+    category: "",
     tribeName: "",
     annualFamilyIncome: "",
     institutionName: "",
@@ -85,24 +89,95 @@ function ApplyForm() {
   }, [selectedSchemeId, authUser]);
 
   // Handler for "Auto-Fill from Document" OCR feature
-  const handleOcrUpload = async (file: File) => {
+  const handleOcrUpload = async (file: File, targetHint?: "CASTE" | "INCOME" | "MARKSHEET") => {
     setIsOcrProcessing(true);
     setErrorMsg("");
     try {
-      const data = await applicationApi.extractDocWithOcr(file, "CASTE_OR_INCOME");
+      const data = await applicationApi.extractDocWithOcr(file, targetHint || "CASTE_OR_INCOME");
       if (!data || !data.success) {
         throw new Error(data?.message || "Could not extract legible text from this document.");
       }
       setOcrResult(data);
 
-      setFormData((prev) => ({
-        ...prev,
-        fullName: data.name || data.fullName || prev.fullName,
-        category: data.casteCategory || prev.category,
-        tribeName: data.tribe || data.tribeName || prev.tribeName,
-        annualFamilyIncome: data.incomeValue ? data.incomeValue.toString() : prev.annualFamilyIncome,
-        casteDocFileName: file.name,
-      }));
+      const fileNameLower = (file.name || "").toLowerCase();
+      const docTypeLower = (data.documentType || data.document_type || "").toLowerCase();
+
+      const hasIncome =
+        targetHint === "INCOME" ||
+        data.incomeValue != null ||
+        docTypeLower.includes("income") ||
+        fileNameLower.includes("income");
+
+      const hasCaste =
+        targetHint === "CASTE" ||
+        Boolean(data.casteCategory && String(data.casteCategory).trim()) ||
+        Boolean(data.tribe && String(data.tribe).trim()) ||
+        docTypeLower.includes("caste") ||
+        docTypeLower.includes("tribal") ||
+        fileNameLower.includes("caste") ||
+        fileNameLower.includes("st_cert") ||
+        fileNameLower.includes("tribe");
+
+      const hasMarksheet =
+        targetHint === "MARKSHEET" ||
+        docTypeLower.includes("marksheet") ||
+        docTypeLower.includes("academic") ||
+        docTypeLower.includes("grade") ||
+        fileNameLower.includes("mark") ||
+        fileNameLower.includes("grade");
+
+      setFormData((prev) => {
+        const next = { ...prev };
+
+        if (data.name || data.fullName) {
+          next.fullName = data.name || data.fullName;
+        }
+
+        if (hasIncome && !hasCaste) {
+          // Pure Income Certificate - Auto-fill into Family Income Certificate click box
+          next.incomeDocFileName = file.name;
+          setIncomeFile(file);
+          if (data.incomeValue != null) {
+            next.annualFamilyIncome = String(data.incomeValue);
+          }
+          // Do NOT touch or verify caste category!
+        } else if (hasCaste) {
+          // Caste Certificate - Auto-fill into ST Caste Certificate click box
+          next.casteDocFileName = file.name;
+          setCasteFile(file);
+          if (data.casteCategory) {
+            next.category = data.casteCategory;
+          } else if (!next.category) {
+            next.category = "ST";
+          }
+          if (data.tribe || data.tribeName) {
+            next.tribeName = data.tribe || data.tribeName;
+          }
+          // If combined document also provides income
+          if (data.incomeValue != null) {
+            next.incomeDocFileName = file.name;
+            setIncomeFile(file);
+            next.annualFamilyIncome = String(data.incomeValue);
+          }
+        } else if (hasMarksheet) {
+          // Academic Marksheet
+          next.marksheetDocFileName = file.name;
+          setMarksheetFile(file);
+        } else {
+          // Fallback based on explicit hint or extracted fields
+          if (targetHint === "INCOME" || data.incomeValue != null) {
+            next.incomeDocFileName = file.name;
+            setIncomeFile(file);
+            if (data.incomeValue != null) next.annualFamilyIncome = String(data.incomeValue);
+          } else {
+            next.casteDocFileName = file.name;
+            setCasteFile(file);
+            if (data.casteCategory) next.category = data.casteCategory;
+          }
+        }
+
+        return next;
+      });
     } catch (err: any) {
       setErrorMsg(
         err.response?.data?.message ||
@@ -272,11 +347,15 @@ function ApplyForm() {
                   </div>
                   <div className="p-2 rounded-xl bg-stone-50 dark:bg-stone-900">
                     <span className="text-[10px] text-stone-400 block uppercase">{t("extractedCategory")}</span>
-                    <span className="font-bold text-stone-900 dark:text-white">{ocrResult.casteCategory || formData.category || "ST"}</span>
+                    <span className="font-bold text-stone-900 dark:text-white">
+                      {ocrResult.casteCategory || (formData.casteDocFileName && formData.category ? formData.category : "—")}
+                    </span>
                   </div>
                   <div className="p-2 rounded-xl bg-stone-50 dark:bg-stone-900">
                     <span className="text-[10px] text-stone-400 block uppercase">{t("extractedTribe")}</span>
-                    <span className="font-bold text-stone-900 dark:text-white">{ocrResult.tribe || formData.tribeName || "—"}</span>
+                    <span className="font-bold text-stone-900 dark:text-white">
+                      {ocrResult.tribe || (formData.casteDocFileName && formData.tribeName ? formData.tribeName : "—")}
+                    </span>
                   </div>
                   <div className="p-2 rounded-xl bg-stone-50 dark:bg-stone-900">
                     <span className="text-[10px] text-stone-400 block uppercase">{t("extractedIncome")}</span>
@@ -365,15 +444,28 @@ function ApplyForm() {
                 </div>
 
                 <div className="space-y-1">
-                  <label className="font-semibold text-stone-700 dark:text-stone-300">{t("casteCat")}</label>
+                  <div className="flex items-center justify-between">
+                    <label className="font-semibold text-stone-700 dark:text-stone-300">{t("casteCat")}</label>
+                    {formData.casteDocFileName && formData.category ? (
+                      <span className="text-[10px] text-emerald-600 dark:text-emerald-400 font-bold inline-flex items-center gap-1">
+                        <CheckCircle2 className="h-3 w-3" /> Verified via Certificate
+                      </span>
+                    ) : (
+                      <span className="text-[10px] text-amber-600 dark:text-amber-400 font-medium">
+                        Pending Certificate Upload
+                      </span>
+                    )}
+                  </div>
                   <select
                     value={formData.category}
                     onChange={(e) => setFormData({ ...formData, category: e.target.value })}
                     className="w-full rounded-xl border border-stone-300 dark:border-stone-700 bg-stone-50 dark:bg-stone-800/50 p-2.5 text-stone-900 dark:text-white outline-hidden focus:border-orange-500"
                   >
+                    <option value="">-- Pending Caste Certificate Verification --</option>
                     <option value="ST">Scheduled Tribe (ST)</option>
                     <option value="SC">Scheduled Caste (SC)</option>
-                    <option value="OBC">OBC</option>
+                    <option value="OBC">Other Backward Class (OBC)</option>
+                    <option value="General">General</option>
                   </select>
                 </div>
 
@@ -482,21 +574,58 @@ function ApplyForm() {
                 <FileUploader
                   label={t("casteCert")}
                   subLabel={t("casteCertSub")}
-                  onFileSelect={(f) => setFormData({ ...formData, casteDocFileName: f.name })}
-                  onOcrTrigger={handleOcrUpload}
+                  file={casteFile}
+                  fileName={formData.casteDocFileName}
+                  isAutoFilled={Boolean(formData.casteDocFileName)}
+                  onFileSelect={(f) => {
+                    setCasteFile(f);
+                    setFormData((prev) => ({ ...prev, casteDocFileName: f.name }));
+                    handleOcrUpload(f, "CASTE");
+                  }}
+                  onClear={() => {
+                    setCasteFile(null);
+                    setFormData((prev) => ({ ...prev, casteDocFileName: "", category: "", tribeName: "" }));
+                  }}
+                  onOcrTrigger={(f) => handleOcrUpload(f, "CASTE")}
                   isProcessingOcr={isOcrProcessing}
                 />
 
                 <FileUploader
                   label={t("incomeCert")}
                   subLabel={t("incomeCertSub")}
-                  onFileSelect={(f) => setFormData({ ...formData, incomeDocFileName: f.name })}
+                  file={incomeFile}
+                  fileName={formData.incomeDocFileName}
+                  isAutoFilled={Boolean(formData.incomeDocFileName)}
+                  onFileSelect={(f) => {
+                    setIncomeFile(f);
+                    setFormData((prev) => ({ ...prev, incomeDocFileName: f.name }));
+                    handleOcrUpload(f, "INCOME");
+                  }}
+                  onClear={() => {
+                    setIncomeFile(null);
+                    setFormData((prev) => ({ ...prev, incomeDocFileName: "", annualFamilyIncome: "" }));
+                  }}
+                  onOcrTrigger={(f) => handleOcrUpload(f, "INCOME")}
+                  isProcessingOcr={isOcrProcessing}
                 />
 
                 <FileUploader
                   label={t("marksheet")}
                   subLabel={t("marksheetSub")}
-                  onFileSelect={(f) => setFormData({ ...formData, marksheetDocFileName: f.name })}
+                  file={marksheetFile}
+                  fileName={formData.marksheetDocFileName}
+                  isAutoFilled={Boolean(formData.marksheetDocFileName)}
+                  onFileSelect={(f) => {
+                    setMarksheetFile(f);
+                    setFormData((prev) => ({ ...prev, marksheetDocFileName: f.name }));
+                    handleOcrUpload(f, "MARKSHEET");
+                  }}
+                  onClear={() => {
+                    setMarksheetFile(null);
+                    setFormData((prev) => ({ ...prev, marksheetDocFileName: "" }));
+                  }}
+                  onOcrTrigger={(f) => handleOcrUpload(f, "MARKSHEET")}
+                  isProcessingOcr={isOcrProcessing}
                 />
               </div>
             </div>

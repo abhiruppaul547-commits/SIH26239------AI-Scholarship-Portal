@@ -18,7 +18,7 @@ class OcrResponse(BaseModel):
     success: bool
     document_type: str
     name: Optional[str] = None
-    caste_category: Optional[str] = "ST"
+    caste_category: Optional[str] = None
     tribe: Optional[str] = None
     income_value: Optional[float] = None
     certificate_number: Optional[str] = None
@@ -52,7 +52,7 @@ def parse_extracted_text(text: str, filename: str = "", doc_type: Optional[str] 
     """Extract structured scholarship entities from OCR text using specialized NLP regex patterns."""
     extracted = {
         "name": None,
-        "caste_category": "ST",
+        "caste_category": None,
         "tribe": None,
         "income_value": None,
         "certificate_number": None,
@@ -198,7 +198,7 @@ async def extract_document(
             success=True,
             document_type=doc_label,
             name=gemini_data.get("name"),
-            caste_category=gemini_data.get("caste_category") or "ST",
+            caste_category=gemini_data.get("caste_category") if gemini_data.get("caste_category") else None,
             tribe=gemini_data.get("tribe"),
             income_value=gemini_data.get("income_value"),
             certificate_number=gemini_data.get("certificate_number"),
@@ -225,7 +225,7 @@ async def extract_document(
         success=bool(parsed.get("name") or parsed.get("certificate_number") or raw_text.strip()),
         document_type=doc_label,
         name=parsed.get("name"),
-        caste_category=parsed.get("caste_category", "ST"),
+        caste_category=parsed.get("caste_category"),
         tribe=parsed.get("tribe"),
         income_value=parsed.get("income_value"),
         certificate_number=parsed.get("certificate_number"),
