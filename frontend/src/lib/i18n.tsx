@@ -138,7 +138,7 @@ export const translations: Record<Language, Record<string, string>> = {
     statusREJECTED: "REJECTED",
 
     // Dashboard
-    dashboardGreeting: "Johar",
+    dashboardGreeting: "Hello",
     dashboardSub: "Track your verified certificates, AI-matched schemes, and disbursement progress.",
     applyNewScheme: "Apply for New Scheme",
     casteVerif: "Caste Verification",
@@ -333,7 +333,7 @@ export const translations: Record<Language, Record<string, string>> = {
     statusREJECTED: "अस्वीकृत",
 
     // Dashboard
-    dashboardGreeting: "जोहार",
+    dashboardGreeting: "नमस्ते",
     dashboardSub: "अपने सत्यापित प्रमाण पत्रों, AI-मिलान योजनाओं और छात्रवृत्ति वितरण प्रगति को ट्रैक करें।",
     applyNewScheme: "नई योजना के लिए आवेदन करें",
     casteVerif: "जाति सत्यापन",
@@ -711,7 +711,7 @@ export const translations: Record<Language, Record<string, string>> = {
     statusAPPROVED: "অনুমোদিত",
     statusREJECTED: "প্রত্যাখ্যাত",
 
-    dashboardGreeting: "জোহার",
+    dashboardGreeting: "নমস্কার",
     dashboardSub: "আপনার যাচাইকৃত সার্টিফিকেট, AI প্রস্তাবিত প্রকল্প এবং স্কলারশিপ প্রাপ্তির অগ্রগতি ট্র্যাক করুন।",
     applyNewScheme: "নতুন স্কিমে আবেদন করুন",
     casteVerif: "জাতিগত যাচাইকরণ",
@@ -900,7 +900,7 @@ export const translations: Record<Language, Record<string, string>> = {
     statusAPPROVED: "অনুমোদিত",
     statusREJECTED: "নাকচ",
 
-    dashboardGreeting: "জোহাৰ",
+    dashboardGreeting: "নমস্কাৰ",
     dashboardSub: "আপোনাৰ পৰীক্ষিত চার্টিফিকেট, AI প্ৰস্তাৱিত আঁচনি আৰু বৃত্তি লাভৰ অগ্ৰগতি চাওক।",
     applyNewScheme: "নতুন আঁচনিত আবেদন কৰক",
     casteVerif: "জাতিগত পৰীক্ষা",

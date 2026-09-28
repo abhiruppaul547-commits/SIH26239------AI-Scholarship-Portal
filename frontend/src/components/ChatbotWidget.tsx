@@ -60,11 +60,11 @@ const NATIVE_SUGGESTIONS: Record<Language, string[]> = {
 const getWelcomeMessage = (lang: Language, name?: string | null): string => {
   const greetingName = name ? `, ${name}` : "";
   const map: Record<Language, string> = {
-    en: `Johar${greetingName}! 🙏 I am your production-grade AI Scholarship Advisor powered by Gemini. Ask me anything about schemes, income criteria, documents, DBT transfers, or AI auto-filling!`,
-    hi: `जोहार${greetingName}! 🙏 मैं आपका Gemini-संचालित AI छात्रवृत्ति सलाहकार हूँ। योजनाओं, आय सीमा, दस्तावेज़ों, या AI ऑटो-फिल के बारे में कुछ भी पूछें!`,
+    en: `Hello${greetingName}! 🙏 I am your production-grade AI Scholarship Advisor powered by Gemini. Ask me anything about schemes, income criteria, documents, DBT transfers, or AI auto-filling!`,
+    hi: `नमस्ते${greetingName}! 🙏 मैं आपका Gemini-संचालित AI छात्रवृत्ति सलाहकार हूँ। योजनाओं, आय सीमा, दस्तावेज़ों, या AI ऑटो-फिल के बारे में कुछ भी पूछें!`,
     sat: `ᱡᱚᱦᱟᱨ${greetingName}! 🙏 ᱤᱧ ᱟᱹᱫᱤᱵᱟᱹᱥᱤ ᱯᱟᱹᱴᱷᱩᱣᱟᱹ ᱠᱚ ᱞᱟᱹᱜᱤᱫ Gemini ᱫᱟᱨᱟᱭ ᱛᱮ ᱪᱟᱞᱟᱣᱚᱜ ᱠᱟᱱ AI ᱥᱠᱚᱞᱟᱨᱥᱤᱯ ᱜᱚᱲᱚᱭᱤᱡ। ᱥᱠᱚᱞᱟᱨᱥᱤᱯ, ᱟᱭ ᱥᱤᱢᱟᱹ ᱟᱨ OCR ᱵᱟᱵᱚᱛ ᱠᱩᱞᱤᱭᱤᱧ ᱢᱮ!`,
-    bn: `জোহার ও নমস্কার${greetingName}! 🙏 আমি আপনার Gemini-চালিত অফিসিয়াল AI বৃত্তি উপদেষ্টা। স্কলারশিপ স্কিম, আয়ের সীমা, প্রয়োজনীয় নথিপত্র ও AI ভেরিফিকেশন নিয়ে যেকোনো প্রশ্ন করুন!`,
-    as: `জোহাৰ আৰু নমস্কাৰ${greetingName}! 🙏 মই Gemini-চালিত জনজাতীয় শিক্ষাৰ্থীৰ AI বৃত্তি পৰামৰ্শদাতা। আঁচনি, আয়ৰ যোগ্যতা, নথিপত্ৰ বা AI অটো-ফিল সম্পৰ্কে আপুনি সোধিব পাৰে!`,
+    bn: `নমস্কার${greetingName}! 🙏 আমি আপনার Gemini-চালিত অফিসিয়াল AI বৃত্তি উপদেষ্টা। স্কলারশিপ স্কিম, আয়ের সীমা, প্রয়োজনীয় নথিপত্র ও AI ভেরিফিকেশন নিয়ে যেকোনো প্রশ্ন করুন!`,
+    as: `নমস্কাৰ${greetingName}! 🙏 মই Gemini-চালিত জনজাতীয় শিক্ষাৰ্থীৰ AI বৃত্তি পৰামৰ্শদাতা। আঁচনি, আয়ৰ যোগ্যতা, নথিপত্ৰ বা AI অটো-ফিল সম্পৰ্কে আপুনি সোধিব পাৰে!`,
   };
   return map[lang] || map.en;
 };
@@ -297,7 +297,7 @@ export default function ChatbotWidget() {
       const fallbackMsg: Message = {
         id: (Date.now() + 1).toString(),
         sender: "bot",
-        text: getWelcomeMessage(language, activeUserName) || "Johar! Please check scholarship guidelines or contact the district nodal officer.",
+        text: getWelcomeMessage(language, activeUserName) || "Hello! Please check scholarship guidelines or contact the district nodal officer.",
         timestamp: new Date().toLocaleTimeString([], { hour: "2-digit", minute: "2-digit" }),
       };
       setMessages((prev) => [...prev, fallbackMsg]);
