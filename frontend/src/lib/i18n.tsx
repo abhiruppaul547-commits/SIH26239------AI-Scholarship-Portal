@@ -1098,16 +1098,102 @@ const SCHEME_TRANSLATIONS: Record<string, Record<Language, LocalizedSchemeConten
       matchReason: "শীৰ্ষ অভিযান্ত্ৰিক আৰু প্ৰযুক্তি প্ৰতিষ্ঠানসমূহৰ বাবে প্ৰযোজ্য",
     },
   },
+  pre_matric: {
+    en: {
+      title: "Pre-Matric Scholarship for ST Students",
+      category: "Pre-Matric",
+      provider: "Ministry of Tribal Affairs & State Tribal Welfare Departments",
+      description: "Financial assistance to tribal students studying in Classes IX and X to prevent dropouts and support transition to post-secondary education.",
+      matchReason: "Applicable for secondary school tribal students with family income under ₹2.5L",
+    },
+    hi: {
+      title: "अनुसूचित जनजाति (ST) छात्रों के लिए प्री-मैट्रिक छात्रवृत्ति",
+      category: "प्री-मैट्रिक",
+      provider: "जनजातीय कार्य मंत्रालय एवं राज्य कल्याण विभाग",
+      description: "कक्षा 9 और 10 में अध्ययनरत एसटी छात्रों को पढ़ाई बीच में छोड़ने से रोकने और माध्यमिक शिक्षा पूरी करने हेतु आर्थिक सहायता।",
+      matchReason: "कक्षा 9-10 के एसटी विद्यार्थियों के लिए मान्य, पारिवारिक आय ₹2.5 लाख से कम",
+    },
+    sat: {
+      title: "ST ᱯᱟᱹᱴᱷᱩᱣᱟᱹ ᱠᱚ ᱞᱟᱹᱜᱤᱫ ᱢᱮᱴᱨᱤᱠ ᱢᱟᱬᱟᱝ (Pre-Matric) ᱥᱠᱚᱞᱟᱨᱥᱤᱯ",
+      category: "ᱢᱮᱴᱨᱤᱠ ᱢᱟᱬᱟᱝ",
+      provider: "ᱟᱹᱫᱤᱵᱟᱹᱥᱤ ᱢᱚᱱᱛᱨᱟᱞᱚᱭ ᱟᱨ ᱯᱚᱱᱚᱛ ᱵᱤᱵᱷᱟᱜᱽ",
+      description: "᱙ ᱟᱨ ᱑᱐ ᱪᱟᱱᱟᱪ ᱨᱮ ᱯᱟᱲᱦᱟᱣᱜ ᱠᱟᱱ ST ᱯᱟᱹᱴᱷᱩᱣᱟᱹ ᱠᱚ ᱞᱟᱹᱜᱤᱫ ᱥᱮᱪᱮᱫ ᱜᱚᱲᱚ ᱴᱟᱠᱟ।",
+      matchReason: "᱙-᱑᱐ ᱪᱟᱱᱟᱪ ᱨᱮᱱ ST ᱯᱟᱹᱴᱷᱩᱣᱟᱹ ᱠᱚ ᱞᱟᱹᱜᱤᱫ, ᱟᱭ ₹২.৫ ᱞᱟᱠᱷ ᱠᱷᱚᱱ ᱠᱚᱢ",
+    },
+    bn: {
+      title: "তফসিলি উপজাতি (ST) শিক্ষার্থীদের জন্য প্রি-ম্যাট্রিক স্কলারশিপ",
+      category: "প্রি-ম্যাট্রিক",
+      provider: "উপজাতি বিষয়ক মন্ত্রণালয় ও রাজ্য কল্যাণ বিভাগ",
+      description: "নবম ও দশম শ্রেণীতে অধ্যয়নরত উপজাতি শিক্ষার্থীদের স্কুলছুট রোধ ও মাধ্যমিক শিক্ষা সহায়তা করার জন্য আর্থিক অনুদান।",
+      matchReason: "নবম-দশম শ্রেণীর এসটি শিক্ষার্থীদের জন্য প্রযোজ্য, পারিবারিক আয় ₹২.৫ লক্ষের নিচে",
+    },
+    as: {
+      title: "অনুসূচীত জনজাতি (ST) শিক্ষাৰ্থীৰ বাবে প্ৰি-মেট্ৰিক বৃত্তি",
+      category: "প্ৰি-মেট্ৰিক",
+      provider: "জনজাতীয় মন্ত্ৰালয় আৰু ৰাজ্যিক কল্যাণ বিভাগ",
+      description: "নৱম আৰু দশম শ্ৰেণীত অধ্যয়নৰত জনজাতীয় ছাত্ৰ-ছাত্ৰীৰ বাবে বিত্তীয় সাহায্য।",
+      matchReason: "নৱম-দশম শ্ৰেণীৰ জনজাতীয় শিক্ষাৰ্থীৰ বাবে প্ৰযোজ্য, আয় ₹২.৫ লাখৰ ভিতৰত",
+    },
+  },
+  overseas: {
+    en: {
+      title: "National Overseas Scholarship for ST Students",
+      category: "Overseas Studies",
+      provider: "Ministry of Tribal Affairs, Govt. of India",
+      description: "Exclusive scholarship funding tuition fees, international airfare, and annual living allowance for ST scholars pursuing postgraduate and doctoral studies in top global universities.",
+      matchReason: "Open for advanced tribal scholars seeking international master's or doctoral degrees",
+    },
+    hi: {
+      title: "एसटी छात्रों के लिए राष्ट्रीय विदेशी छात्रवृत्ति (National Overseas)",
+      category: "विदेशी अध्ययन",
+      provider: "जनजातीय कार्य मंत्रालय, भारत सरकार",
+      description: "विश्व के शीर्ष 500 विदेशी विश्वविद्यालयों में मास्टर्स, पीएचडी और पोस्ट-डॉक्टरल शोध करने वाले एसटी विद्यार्थियों को 100% फीस, हवाई किराया व निर्वाह भत्ता।",
+      matchReason: "विदेश में उच्च शिक्षा व शोध हेतु एसटी विद्यार्थियों के लिए उपलब्ध",
+    },
+    sat: {
+      title: "ST ᱯᱟᱹᱴᱷᱩᱣᱟᱹ ᱠᱚ ᱞᱟᱹᱜᱤᱫ ᱡᱟᱹᱛᱤᱭᱟᱹᱨᱤ ᱵᱤᱫᱮᱥ (Overseas) ᱥᱠᱚᱞᱟᱨᱥᱤᱯ",
+      category: "ᱵᱤᱫᱮᱥ ᱥᱮᱪᱮᱫ",
+      provider: "ᱟᱹᱫᱤᱵᱟᱹᱥᱤ ᱢᱚᱱᱛᱨᱟᱞᱚᱭ, ᱵᱷᱟᱨᱚᱛ ᱥᱚᱨᱠᱟᱨ",
+      description: "ᱵᱤᱫᱮᱥ ᱨᱮ ᱢᱟᱥᱴᱟᱨᱥ ᱟᱨ ᱯᱤ.ᱮᱭᱪ.ᱰᱤ ᱯᱟᱲᱦᱟᱣᱜ ᱠᱟᱱ ST ᱠᱚ ᱞᱟᱹᱜᱤᱫ ᱯᱩᱨᱟᱹ ᱯᱷᱤ ᱟᱨ ᱩᱰᱟᱹᱱ ᱴᱤᱠᱤᱴ ᱠᱷᱚᱨᱚᱪ।",
+      matchReason: "ᱵᱤᱫᱮᱥ ᱨᱮ ᱪᱮᱛᱟᱱ ᱥᱮᱪᱮᱫ ᱞᱟᱹᱜᱤᱫ ST ᱯᱟᱹᱴᱷᱩᱣᱟᱹ ᱠᱚ ᱞᱟᱹᱜᱤᱫ",
+    },
+    bn: {
+      title: "তফসিলি উপজাতি (ST) শিক্ষার্থীদের জন্য জাতীয় বিদেশী বৃত্তি (National Overseas)",
+      category: "বিদেশী শিক্ষা",
+      provider: "উপজাতি বিষয়ক মন্ত্রণালয়, ভারত সরকার",
+      description: "বিদেশের শীর্ষ ৫০০ বিশ্ববিদ্যালয়ে স্নাতকোত্তর ও পিএইচডি গবেষণার জন্য ১০০% টিউশন ফি, বিমান ভাড়া ও বার্ষিক জীবনযাত্রা ভাতা।",
+      matchReason: "বিদেশে উচ্চশিক্ষা ও গবেষণার জন্য উপজাতি শিক্ষার্থীদের সুযোগ",
+    },
+    as: {
+      title: "ST শিক্ষাৰ্থীৰ বাবে ৰাষ্ট্ৰীয় বৈদেশিক বৃত্তি (National Overseas)",
+      category: "বৈদেশিক শিক্ষা",
+      provider: "জনজাতীয় পৰিক্ৰমা মন্ত্ৰালয়, ভাৰত চৰকাৰ",
+      description: "বিদেশৰ শীৰ্ষ বিশ্ববিদ্যালয়ত স্নাতকোত্তৰ আৰু পি.এইচ.ডি অধ্যয়নৰ বাবে ১০০% মাচুল, বিমান ভাড়া আৰু জীৱন-নিৰ্বাহ বানচ।",
+      matchReason: "বিদেশত উচ্চ শিক্ষা লাভৰ বাবে জনজাতীয় শিক্ষাৰ্থীসকলৰ বাবে প্ৰযোজ্য",
+    },
+  },
 };
 
 export function translateScheme(scheme: any, lang: Language) {
   if (!scheme) return scheme;
   const titleLower = (scheme.title || scheme.scholarshipTitle || "").toLowerCase();
+  const categoryLower = (scheme.category || scheme.tag || "").toLowerCase();
+
   let key = "post_matric";
-  if (titleLower.includes("fellowship") || titleLower.includes("higher education") || scheme.id === 1 || scheme.schemeId === 1) {
+  if (titleLower.includes("pre-matric") || titleLower.includes("pre matric") || categoryLower.includes("pre-matric")) {
+    key = "pre_matric";
+  } else if (titleLower.includes("overseas") || categoryLower.includes("overseas")) {
+    key = "overseas";
+  } else if (
+    titleLower.includes("fellowship") ||
+    titleLower.includes("higher education") ||
+    titleLower.includes("top class") ||
+    categoryLower.includes("higher education") ||
+    categoryLower.includes("top class")
+  ) {
     key = "national_fellowship";
-  } else if (titleLower.includes("top class") || scheme.id === 3 || scheme.schemeId === 3) {
-    key = "top_class";
+  } else if (titleLower.includes("post-matric") || titleLower.includes("post matric") || categoryLower.includes("post-matric")) {
+    key = "post_matric";
   }
 
   const translated = SCHEME_TRANSLATIONS[key]?.[lang] || SCHEME_TRANSLATIONS[key]?.en;

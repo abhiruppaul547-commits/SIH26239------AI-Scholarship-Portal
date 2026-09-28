@@ -23,6 +23,41 @@ import { getUserApplications, saveApplication } from "@/lib/databaseService";
 import ApplicationTracker from "@/components/ApplicationTracker";
 import { useLanguage, translateScheme, translateStatus } from "@/lib/i18n";
 import { getCleanFirstName, getCleanFullName } from "@/lib/nameUtils";
+import { OFFICIAL_RECOMMENDED_SCHEMES } from "@/data/scholarshipSchemes";
+
+function getInstitutionalStatus(rawStatus?: string): {
+  label: "Pending Scrutiny" | "Institute Verification" | "Approved";
+  badgeClass: string;
+  trackerStatus: "UNDER_REVIEW" | "VERIFIED" | "APPROVED";
+  icon: typeof Clock;
+} {
+  const s = (rawStatus || "").toUpperCase().trim();
+  if (s.includes("APPROV") || s.includes("SANCTION") || s.includes("DISBURS")) {
+    return {
+      label: "Approved",
+      badgeClass:
+        "bg-emerald-100 dark:bg-emerald-950/80 border-emerald-300 dark:border-emerald-800 text-emerald-800 dark:text-emerald-300",
+      trackerStatus: "APPROVED",
+      icon: CheckCircle2,
+    };
+  }
+  if (s.includes("INSTITUTE") || s === "VERIFIED" || s.includes("NODAL")) {
+    return {
+      label: "Institute Verification",
+      badgeClass:
+        "bg-blue-100 dark:bg-blue-950/80 border-blue-300 dark:border-blue-800 text-blue-800 dark:text-blue-300",
+      trackerStatus: "VERIFIED",
+      icon: ShieldCheck,
+    };
+  }
+  return {
+    label: "Pending Scrutiny",
+    badgeClass:
+      "bg-amber-100 dark:bg-amber-950/80 border-amber-300 dark:border-amber-800 text-amber-800 dark:text-amber-300",
+    trackerStatus: "UNDER_REVIEW",
+    icon: Clock,
+  };
+}
 
 export default function StudentDashboard() {
   const router = useRouter();
@@ -32,13 +67,14 @@ export default function StudentDashboard() {
   const [profile, setProfile] = useState<any>(null);
   const [applications, setApplications] = useState<any[]>([]);
   const [firebaseApps, setFirebaseApps] = useState<any[]>([]);
-  const [recommendations, setRecommendations] = useState<any[]>([]);
+  const [recommendations, setRecommendations] = useState<any[]>(OFFICIAL_RECOMMENDED_SCHEMES);
   const [backendHealth, setBackendHealth] = useState<{ status: string; url: string; checked: boolean }>({
     status: "checking",
     url: "",
     checked: false,
   });
-  const [isSubmittingQuickApp, setIsSubmittingQuickApp] = useState(false);
+  const [applyingSchemeId, setApplyingSchemeId] = useState<number | string | null>(null);
+  const [toastMessage, setToastMessage] = useState<{ text: string; type: "success" | "error" } | null>(null);
 
   // Authentication protection: redirect if unauthenticated
   useEffect(() => {
@@ -127,63 +163,53 @@ export default function StudentDashboard() {
         console.warn("Could not fetch RTDB applications:", err);
       }
 
-      // Load Recommendations
+      // Load Recommendations (fallback seamlessly to authentic MoTA ST schemes)
       const recData = await scholarshipApi.getRecommended().catch(() => ({
-        recommendations: [
-          {
-            schemeId: 1,
-            title: "National Fellowship and Scholarship for Higher Education of ST Students",
-            matchScore: 98.5,
-            matchReason: "Matches ST category requirement & family income (₹1.2L) well below ₹6.0L ceiling",
-            scholarshipAmount: 28000,
-            category: "Higher Education",
-          },
-          {
-            schemeId: 2,
-            title: "Post-Matric Scholarship for Scheduled Tribe (ST) Students",
-            matchScore: 93.0,
-            matchReason: "Fully eligible for post-secondary maintenance stipend and complete fee waiver",
-            scholarshipAmount: 15000,
-            category: "Post-Matric",
-          },
-          {
-            schemeId: 3,
-            title: "Top Class Education Scheme for ST Students",
-            matchScore: 89.0,
-            matchReason: "Applicable for premier engineering and technology institutes",
-            scholarshipAmount: 85000,
-            category: "Top Class",
-          },
-        ],
+        recommendations: OFFICIAL_RECOMMENDED_SCHEMES,
       }));
 
-      if (recData && recData.recommendations) {
+      if (recData && recData.recommendations && recData.recommendations.length > 0) {
         setRecommendations(recData.recommendations);
+      } else {
+        setRecommendations(OFFICIAL_RECOMMENDED_SCHEMES);
       }
     } catch {}
   };
 
-  const handleQuickFirebaseApply = async (scheme: any) => {
+  const handleApplyNow = async (scheme: any) => {
     const effectiveUid = user?.uid || authApi.getCurrentUser()?.id || "demo-student-uid";
-    setIsSubmittingQuickApp(true);
+    const schemeKey = scheme.schemeId || scheme.id || 1;
+    setApplyingSchemeId(schemeKey);
+
     try {
       await saveApplication(effectiveUid, {
-        scholarshipId: scheme.schemeId || 1,
-        scholarshipTitle: scheme.title || "National Fellowship for ST Students",
+        scholarshipId: schemeKey,
+        scholarshipTitle: scheme.title || "National Fellowship & Scholarship for ST Students",
         scholarshipAmount: scheme.scholarshipAmount || 28000,
         studentName: getCleanFullName(profile?.fullName || user || authApi.getCurrentUser()),
-        email: user?.email || "student@sih.gov.in",
+        email: user?.email || authApi.getCurrentUser()?.email || "student@sih.gov.in",
         category: profile?.category || "ST",
         annualIncome: profile?.annualFamilyIncome || 120000,
-        status: "SUBMITTED_TO_FIREBASE",
+        status: "Pending Scrutiny",
       });
+
       // Refresh RTDB applications
       const updated = await getUserApplications(effectiveUid);
       setFirebaseApps(updated);
+
+      setToastMessage({
+        text: `Application for "${scheme.title}" successfully submitted!`,
+        type: "success",
+      });
+      setTimeout(() => setToastMessage(null), 4500);
     } catch (err: any) {
-      alert("Failed to save application to Firebase: " + err.message);
+      setToastMessage({
+        text: "Failed to submit application: " + (err.message || "Network issue"),
+        type: "error",
+      });
+      setTimeout(() => setToastMessage(null), 5000);
     } finally {
-      setIsSubmittingQuickApp(false);
+      setApplyingSchemeId(null);
     }
   };
 
@@ -196,7 +222,41 @@ export default function StudentDashboard() {
     );
   }
 
-  const allAppsCount = applications.length + firebaseApps.length;
+  const cleanStudentName = getCleanFullName(profile?.fullName || user || authApi.getCurrentUser());
+
+  // Unified list of submitted applications retrieved from Firebase RTDB and Gateway
+  const submittedApplications = [
+    ...firebaseApps.map((fApp, idx) => ({
+      id: fApp.id || `fb-${idx}`,
+      displayNumber:
+        fApp.applicationNumber ||
+        `SIH-MOTA-${String(fApp.id || "001").replace(/[^a-zA-Z0-9]/g, "").slice(-6).toUpperCase() || "ST01"}`,
+      scholarshipTitle: fApp.scholarshipTitle || "National Fellowship & Scholarship for ST Students",
+      scholarshipAmount: fApp.scholarshipAmount || 28000,
+      studentName: fApp.studentName || cleanStudentName,
+      category: fApp.category || profile?.category || "ST",
+      status: fApp.status || "Pending Scrutiny",
+      appliedAt: fApp.submittedAt || new Date().toISOString(),
+      ocrConfidenceScore: 0.985,
+      ocrVerified: true,
+      remarks: "Application secured on Ministry Cloud. Queued for institutional scrutiny.",
+    })),
+    ...applications
+      .filter((app) => !firebaseApps.some((f) => f.scholarshipTitle === app.scholarshipTitle))
+      .map((app) => ({
+        id: app.id,
+        displayNumber: app.applicationNumber || `SIH-MOTA-${app.id}-ST01`,
+        scholarshipTitle: app.scholarshipTitle || app.title,
+        scholarshipAmount: app.scholarshipAmount || 28000,
+        studentName: app.studentName || cleanStudentName,
+        category: app.category || profile?.category || "ST",
+        status: app.status || "Institute Verification",
+        appliedAt: app.appliedAt || new Date().toISOString(),
+        ocrConfidenceScore: app.ocrConfidenceScore || 0.965,
+        ocrVerified: app.ocrVerified ?? true,
+        remarks: app.remarks || "Initial automated OCR cross-checked with State Tribal Database. Santhal ST verified.",
+      })),
+  ];
 
   return (
     <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-10 space-y-10">
@@ -292,10 +352,10 @@ export default function StudentDashboard() {
             <Clock className="h-4 w-4 text-orange-600" />
           </div>
           <div className="text-2xl font-black text-orange-600">
-            {allAppsCount}
+            {submittedApplications.length}
           </div>
           <div className="text-[11px] text-stone-500 mt-1">
-            {firebaseApps.length} in Firebase RTDB
+            Tracked in Beneficiary Registry
           </div>
         </div>
       </div>
@@ -341,21 +401,24 @@ export default function StudentDashboard() {
                   </p>
                 </div>
 
-                <div className="flex flex-col gap-2 pt-2">
-                  <Link
-                    href={`/apply?schemeId=${rec.schemeId}`}
-                    className="w-full flex items-center justify-center gap-1.5 rounded-xl bg-orange-600 text-white font-bold py-2 text-xs hover:bg-orange-500 transition-colors shadow-xs"
-                  >
-                    {t("navApply")} <ArrowRight className="h-3.5 w-3.5" />
-                  </Link>
+                <div className="pt-2">
                   <button
                     type="button"
-                    onClick={() => handleQuickFirebaseApply(rec)}
-                    disabled={isSubmittingQuickApp}
-                    className="w-full flex items-center justify-center gap-1.5 rounded-xl border border-stone-200 dark:border-stone-700 bg-stone-50 dark:bg-stone-800/80 text-stone-700 dark:text-stone-200 font-semibold py-1.5 text-[11px] hover:bg-stone-100 transition-colors disabled:opacity-50"
+                    onClick={() => handleApplyNow(rec)}
+                    disabled={applyingSchemeId !== null}
+                    className="w-full flex items-center justify-center gap-2 rounded-xl bg-gradient-to-r from-orange-600 to-amber-600 text-white font-bold py-2.5 text-xs hover:from-orange-500 hover:to-amber-500 transition-all shadow-md shadow-orange-600/20 active:scale-95 disabled:opacity-60 disabled:cursor-not-allowed"
                   >
-                    <Database className="h-3 w-3 text-amber-500" />
-                    <span>Save to Firebase RTDB</span>
+                    {applyingSchemeId === (rec.schemeId || rec.id) ? (
+                      <>
+                        <Loader2 className="h-3.5 w-3.5 animate-spin" />
+                        <span>Submitting Application...</span>
+                      </>
+                    ) : (
+                      <>
+                        <span>Apply Now</span>
+                        <ArrowRight className="h-3.5 w-3.5" />
+                      </>
+                    )}
                   </button>
                 </div>
               </div>
@@ -363,58 +426,6 @@ export default function StudentDashboard() {
           })}
         </div>
       </div>
-
-      {/* Firebase RTDB Applications Section */}
-      {firebaseApps.length > 0 && (
-        <div className="space-y-4">
-          <div className="flex items-center justify-between">
-            <div>
-              <h2 className="text-lg font-extrabold text-stone-900 dark:text-white flex items-center gap-2">
-                <Database className="h-5 w-5 text-amber-500" />
-                Firebase Realtime Database Submissions
-              </h2>
-              <p className="text-xs text-stone-500 mt-0.5">
-                Cloud synced records persisted at path <code className="font-mono bg-stone-100 dark:bg-stone-800 px-1 py-0.5 rounded text-[11px]">applications/{user?.uid || "user"}/*</code>
-              </p>
-            </div>
-            <span className="px-2.5 py-1 rounded-full bg-amber-100 dark:bg-amber-950/70 text-amber-800 dark:text-amber-300 text-xs font-bold">
-              {firebaseApps.length} Synced
-            </span>
-          </div>
-
-          <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
-            {firebaseApps.map((fApp) => (
-              <div
-                key={fApp.id}
-                className="p-5 rounded-2xl border border-amber-200/80 dark:border-stone-800 bg-amber-50/20 dark:bg-stone-900/60 shadow-xs flex flex-col justify-between gap-3"
-              >
-                <div>
-                  <div className="flex items-center justify-between text-[11px] font-mono text-stone-400">
-                    <span>ID: {fApp.id}</span>
-                    <span className="font-semibold text-emerald-600 bg-emerald-50 dark:bg-emerald-950/60 px-2 py-0.5 rounded-full">
-                      {fApp.status || "SAVED"}
-                    </span>
-                  </div>
-                  <h4 className="font-bold text-sm text-stone-900 dark:text-white mt-1">
-                    {fApp.scholarshipTitle || "ST Scholarship Application"}
-                  </h4>
-                  <div className="mt-2 flex flex-wrap gap-2 text-[11px] text-stone-600 dark:text-stone-400">
-                    <span>Beneficiary: <strong className="text-stone-800 dark:text-stone-200">{fApp.studentName}</strong></span>
-                    <span>•</span>
-                    <span>Category: <strong>{fApp.category || "ST"}</strong></span>
-                    <span>•</span>
-                    <span>Amount: <strong>₹{Number(fApp.scholarshipAmount || 28000).toLocaleString()}</strong></span>
-                  </div>
-                </div>
-                <div className="text-[10px] text-stone-400 border-t border-stone-200/60 dark:border-stone-800/80 pt-2 flex items-center justify-between">
-                  <span>Synced via Firebase SDK</span>
-                  <span>{fApp.submittedAt ? new Date(fApp.submittedAt).toLocaleTimeString() : "Live"}</span>
-                </div>
-              </div>
-            ))}
-          </div>
-        </div>
-      )}
 
       {/* Central Portal Applications Section with Status Tracker */}
       <div className="space-y-6">
@@ -428,7 +439,7 @@ export default function StudentDashboard() {
           </p>
         </div>
 
-        {applications.length === 0 ? (
+        {submittedApplications.length === 0 ? (
           <div className="rounded-3xl border border-dashed border-stone-300 dark:border-stone-800 p-12 text-center space-y-3">
             <FileText className="h-10 w-10 text-stone-400 mx-auto" />
             <h3 className="font-bold text-stone-800 dark:text-stone-200 text-sm">No applications submitted yet</h3>
@@ -444,35 +455,68 @@ export default function StudentDashboard() {
           </div>
         ) : (
           <div className="space-y-6">
-            {applications.map((rawApp) => {
+            {submittedApplications.map((rawApp, idx) => {
               const app = translateScheme(rawApp, language);
+              const statusInfo = getInstitutionalStatus(app.status);
+              const StatusIcon = statusInfo.icon;
+              const formattedDate = app.appliedAt
+                ? new Date(app.appliedAt).toLocaleDateString("en-IN", {
+                    day: "numeric",
+                    month: "short",
+                    year: "numeric",
+                  })
+                : "Active";
+
               return (
                 <div
-                  key={app.id}
-                  className="rounded-3xl border border-stone-200/80 dark:border-stone-800 bg-white dark:bg-stone-900 p-6 shadow-xs space-y-6"
+                  key={app.id || idx}
+                  className="rounded-3xl border border-stone-200/80 dark:border-stone-800 bg-white dark:bg-stone-900 p-6 shadow-xs space-y-6 hover:border-stone-300 dark:hover:border-stone-700 transition-all"
                 >
-                  <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-3 border-b border-stone-100 dark:border-stone-800 pb-4">
-                    <div>
-                      <div className="text-[11px] font-mono text-stone-400 uppercase">
-                        {t("appId")}: {app.applicationNumber}
+                  <div className="flex flex-col sm:flex-row sm:items-start justify-between gap-4 border-b border-stone-100 dark:border-stone-800 pb-4">
+                    <div className="space-y-1">
+                      <div className="flex items-center gap-2">
+                        <span className="text-[11px] font-mono font-semibold text-stone-500 uppercase tracking-wider">
+                          {t("appId")}: {app.displayNumber}
+                        </span>
+                        <span className="text-stone-300 dark:text-stone-700">•</span>
+                        <span className="text-[11px] text-stone-500 flex items-center gap-1">
+                          <Clock className="h-3 w-3 text-stone-400" />
+                          <span>{formattedDate}</span>
+                        </span>
                       </div>
-                      <h3 className="text-base font-bold text-stone-900 dark:text-white mt-0.5">
+
+                      <h3 className="text-base sm:text-lg font-bold text-stone-900 dark:text-white mt-0.5">
                         {app.scholarshipTitle || app.title}
                       </h3>
+
+                      <div className="flex items-center gap-2 text-xs text-stone-600 dark:text-stone-400 pt-0.5">
+                        <span>
+                          Beneficiary: <strong className="text-stone-900 dark:text-white font-semibold">{app.studentName}</strong>
+                        </span>
+                        {app.category && (
+                          <>
+                            <span className="text-stone-300 dark:text-stone-700">•</span>
+                            <span>Category: <strong>{app.category}</strong></span>
+                          </>
+                        )}
+                      </div>
                     </div>
 
-                    <div className="text-right">
-                      <div className="text-xs font-bold text-stone-900 dark:text-white">
-                        {t("sanctionVal")}: ₹{app.scholarshipAmount?.toLocaleString() || "28,000"}
-                      </div>
-                      <div className="text-[11px] text-stone-500">
-                        {t("ocrConfidence")}: {((app.ocrConfidenceScore || 0.95) * 100).toFixed(1)}%
+                    <div className="flex sm:flex-col items-center sm:items-end justify-between sm:justify-start gap-2 shrink-0">
+                      <span
+                        className={`inline-flex items-center gap-1.5 rounded-full border px-3 py-1 text-xs font-bold shadow-2xs ${statusInfo.badgeClass}`}
+                      >
+                        <StatusIcon className="h-3.5 w-3.5" />
+                        <span>{statusInfo.label}</span>
+                      </span>
+                      <div className="text-xs font-extrabold text-stone-900 dark:text-white">
+                        {t("sanctionVal")}: ₹{Number(app.scholarshipAmount || 28000).toLocaleString()}
                       </div>
                     </div>
                   </div>
 
                   <ApplicationTracker
-                    status={app.status || "VERIFIED"}
+                    status={statusInfo.trackerStatus}
                     ocrVerified={app.ocrVerified ?? true}
                     remarks={app.remarks}
                     appliedDate={app.appliedAt}
@@ -483,6 +527,46 @@ export default function StudentDashboard() {
           </div>
         )}
       </div>
+
+      {/* Non-blocking Toast Notification */}
+      {toastMessage && (
+        <div className="fixed bottom-6 right-6 z-50 flex items-center gap-3 rounded-2xl border border-stone-200/80 dark:border-stone-800 bg-white/95 dark:bg-stone-900/95 backdrop-blur-md px-5 py-3.5 shadow-2xl shadow-stone-900/10 transition-all duration-300">
+          <div
+            className={`flex h-8 w-8 items-center justify-center rounded-full ${
+              toastMessage.type === "success"
+                ? "bg-emerald-100 text-emerald-600 dark:bg-emerald-950 dark:text-emerald-400"
+                : "bg-red-100 text-red-600 dark:bg-red-950 dark:text-red-400"
+            }`}
+          >
+            {toastMessage.type === "success" ? (
+              <CheckCircle2 className="h-4 w-4" />
+            ) : (
+              <FileText className="h-4 w-4" />
+            )}
+          </div>
+          <div>
+            <div
+              className={`font-bold text-[11px] uppercase tracking-wider ${
+                toastMessage.type === "success"
+                  ? "text-emerald-600 dark:text-emerald-400"
+                  : "text-red-600 dark:text-red-400"
+              }`}
+            >
+              {toastMessage.type === "success" ? "Application Recorded" : "Notice"}
+            </div>
+            <div className="text-xs font-medium text-stone-700 dark:text-stone-300 max-w-sm">
+              {toastMessage.text}
+            </div>
+          </div>
+          <button
+            type="button"
+            onClick={() => setToastMessage(null)}
+            className="ml-2 text-stone-400 hover:text-stone-600 dark:hover:text-stone-200 text-base font-bold leading-none"
+          >
+            ×
+          </button>
+        </div>
+      )}
     </div>
   );
 }

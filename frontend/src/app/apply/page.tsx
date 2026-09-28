@@ -20,6 +20,7 @@ import FileUploader from "@/components/FileUploader";
 import { useLanguage, translateScheme } from "@/lib/i18n";
 import { useAuth } from "@/context/AuthContext";
 import { getCleanFullName } from "@/lib/nameUtils";
+import { OFFICIAL_ST_SCHEMES } from "@/data/scholarshipSchemes";
 
 function ApplyForm() {
   const router = useRouter();
@@ -28,8 +29,8 @@ function ApplyForm() {
   const { t, language } = useLanguage();
   const { user: authUser } = useAuth();
 
-  const [schemes, setSchemes] = useState<any[]>([]);
-  const [selectedSchemeId, setSelectedSchemeId] = useState<string>(initialSchemeId || "");
+  const [schemes, setSchemes] = useState<any[]>(OFFICIAL_ST_SCHEMES);
+  const [selectedSchemeId, setSelectedSchemeId] = useState<string>(initialSchemeId || "1");
   const [isOcrProcessing, setIsOcrProcessing] = useState(false);
   const [ocrResult, setOcrResult] = useState<any>(null);
   const [isSubmitting, setIsSubmitting] = useState(false);
@@ -63,14 +64,21 @@ function ApplyForm() {
   });
 
   useEffect(() => {
-    scholarshipApi.getAll().then((data) => {
-      if (data && data.length > 0) {
-        setSchemes(data);
-        if (!selectedSchemeId) {
-          setSelectedSchemeId(data[0].id.toString());
+    scholarshipApi
+      .getAll()
+      .then((data) => {
+        if (data && data.length >= 4) {
+          setSchemes(data);
+          if (!selectedSchemeId) {
+            setSelectedSchemeId(initialSchemeId || data[0].id.toString());
+          }
+        } else {
+          setSchemes(OFFICIAL_ST_SCHEMES);
         }
-      }
-    });
+      })
+      .catch(() => {
+        setSchemes(OFFICIAL_ST_SCHEMES);
+      });
 
     const localUser = authApi.getCurrentUser();
     const cleanFullName = getCleanFullName(authUser || localUser);
@@ -79,14 +87,39 @@ function ApplyForm() {
       (authUser?.email && !authUser.email.includes("student@sih.gov.in") ? authUser.email : "") ||
       (localUser?.email && !localUser.email.includes("student@sih.gov.in") ? localUser.email : "");
 
-    if (activeName || activeEmail) {
-      setFormData((prev) => ({
-        ...prev,
-        fullName: prev.fullName || activeName,
-        email: prev.email || activeEmail,
-      }));
-    }
-  }, [selectedSchemeId, authUser]);
+    // Populate existing applicant profile parameters into the application workflow
+    authApi
+      .getProfile()
+      .then((prof) => {
+        if (prof) {
+          setFormData((prev) => ({
+            ...prev,
+            fullName: prev.fullName || prof.fullName || activeName,
+            email: prev.email || prof.email || activeEmail,
+            phone: prev.phone || prof.phone || "",
+            category: prev.category || prof.category || "",
+            tribeName: prev.tribeName || prof.tribeName || "",
+            annualFamilyIncome:
+              prev.annualFamilyIncome ||
+              (prof.annualFamilyIncome ? String(prof.annualFamilyIncome) : ""),
+            institutionName: prev.institutionName || prof.institutionName || "",
+            course: prev.course || prof.course || "",
+            bankAccountNumber: prev.bankAccountNumber || prof.bankAccountNumber || "",
+            bankIfsc: prev.bankIfsc || prof.bankIfsc || "",
+            aadhaarNumber: prev.aadhaarNumber || prof.aadhaarNumber || "",
+          }));
+        }
+      })
+      .catch(() => {
+        if (activeName || activeEmail) {
+          setFormData((prev) => ({
+            ...prev,
+            fullName: prev.fullName || activeName,
+            email: prev.email || activeEmail,
+          }));
+        }
+      });
+  }, [selectedSchemeId, authUser, initialSchemeId]);
 
   // Handler for "Auto-Fill from Document" OCR feature
   const handleOcrUpload = async (file: File, targetHint?: "CASTE" | "INCOME" | "MARKSHEET") => {

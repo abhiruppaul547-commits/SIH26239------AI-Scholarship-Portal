@@ -15,60 +15,26 @@ import {
 } from "lucide-react";
 import { scholarshipApi } from "@/lib/api";
 import { useLanguage, translateScheme } from "@/lib/i18n";
+import { OFFICIAL_ST_SCHEMES } from "@/data/scholarshipSchemes";
 
 export default function Home() {
-  const [schemes, setSchemes] = useState<any[]>([]);
+  const [schemes, setSchemes] = useState<any[]>(OFFICIAL_ST_SCHEMES);
   const { t, language } = useLanguage();
 
   useEffect(() => {
     scholarshipApi
       .getAll()
       .then((data) => {
-        if (data && data.length > 0) {
+        if (data && data.length >= 4) {
           setSchemes(data);
         } else {
-          setFallbackSchemes();
+          setSchemes(OFFICIAL_ST_SCHEMES);
         }
       })
       .catch(() => {
-        setFallbackSchemes();
+        setSchemes(OFFICIAL_ST_SCHEMES);
       });
   }, []);
-
-  const setFallbackSchemes = () => {
-    setSchemes([
-      {
-        id: 1,
-        title: "National Fellowship and Scholarship for Higher Education of ST Students",
-        category: "Higher Education",
-        provider: "Ministry of Tribal Affairs",
-        scholarshipAmount: 28000,
-        maxIncomeLimit: 600000,
-        deadline: "2026-11-30",
-        description: "Full financial coverage including living allowance and tuition for ST candidates pursuing M.Phil, Ph.D, and Master's courses.",
-      },
-      {
-        id: 2,
-        title: "Post-Matric Scholarship for Scheduled Tribe (ST) Students",
-        category: "Post-Matric",
-        provider: "State Tribal Welfare Departments",
-        scholarshipAmount: 15000,
-        maxIncomeLimit: 250000,
-        deadline: "2026-10-31",
-        description: "Tuition allowance and monthly stipend for tribal students pursuing class 11, 12, ITI, Polytechnic, and Bachelor's degrees.",
-      },
-      {
-        id: 3,
-        title: "Top Class Education for Scheduled Tribe Students",
-        category: "Top Class",
-        provider: "Ministry of Tribal Affairs",
-        scholarshipAmount: 85000,
-        maxIncomeLimit: 600000,
-        deadline: "2026-12-15",
-        description: "Full fee coverage and laptop grant for ST scholars in premier institutes like IITs, IIMs, NITs, and AIIMS.",
-      },
-    ]);
-  };
 
   return (
     <div className="space-y-16 pb-20">
@@ -262,72 +228,66 @@ export default function Home() {
 
       {/* Featured Schemes Section */}
       <section className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
-        <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-4 mb-8">
-          <div>
-            <h2 className="text-2xl font-extrabold text-stone-900 dark:text-white">
-              {t("schemesTitle")}
-            </h2>
-            <p className="text-xs text-stone-500 mt-1">
-              {t("schemesSub")}
-            </p>
-          </div>
-          <Link
-            href="/apply"
-            className="inline-flex items-center gap-1.5 text-xs font-bold text-orange-600 hover:text-orange-700"
-          >
-            {t("navApply")} <ArrowRight className="h-3.5 w-3.5" />
-          </Link>
+        <div className="mb-8">
+          <h2 className="text-2xl sm:text-3xl font-extrabold text-stone-900 dark:text-white tracking-tight">
+            {t("schemesTitle")}
+          </h2>
+          <p className="text-xs sm:text-sm text-stone-500 mt-1">
+            {t("schemesSub")}
+          </p>
         </div>
 
-        <div className="grid grid-cols-1 md:grid-cols-3 gap-6">
-          {schemes.slice(0, 3).map((rawScheme) => {
+        <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-5">
+          {schemes.map((rawScheme) => {
             const scheme = translateScheme(rawScheme, language);
+            const schemeKey = scheme.schemeId || scheme.id || 1;
             return (
-            <div
-              key={scheme.id}
-              className="flex flex-col justify-between rounded-2xl border border-stone-200/80 dark:border-stone-800 bg-white dark:bg-stone-900 p-6 shadow-xs hover:shadow-md transition-shadow"
-            >
-              <div className="space-y-3">
-                <div className="flex items-center justify-between">
-                  <span className="rounded-full bg-orange-100 text-orange-800 dark:bg-orange-950 dark:text-orange-300 px-2.5 py-0.5 text-[11px] font-bold">
-                    {scheme.category || "Tribal Welfare"}
-                  </span>
-                  <span className="text-xs font-bold text-emerald-600">
-                    {t("upto")} ₹{scheme.scholarshipAmount?.toLocaleString() || "50,000"} {t("perYear")}
-                  </span>
+              <div
+                key={schemeKey}
+                className="flex flex-col justify-between rounded-2xl border border-stone-200/80 dark:border-stone-800 bg-white dark:bg-stone-900 p-5 shadow-xs hover:shadow-md hover:border-orange-300 dark:hover:border-orange-800 transition-all"
+              >
+                <div className="space-y-3">
+                  <div className="flex items-center justify-between gap-2">
+                    <span className="rounded-full bg-orange-100 text-orange-800 dark:bg-orange-950 dark:text-orange-300 px-2.5 py-0.5 text-[11px] font-bold shrink-0">
+                      {scheme.category || scheme.tag || "Tribal Welfare"}
+                    </span>
+                    <span className="text-xs font-bold text-emerald-600 dark:text-emerald-400 text-right truncate">
+                      {scheme.fundingBadge || (scheme.scholarshipAmount ? `Up to ₹${Number(scheme.scholarshipAmount).toLocaleString()}/yr` : "Full Coverage")}
+                    </span>
+                  </div>
+
+                  <h3 className="text-sm sm:text-base font-bold text-stone-900 dark:text-white leading-snug">
+                    {scheme.title}
+                  </h3>
+
+                  <p className="text-xs text-stone-500 dark:text-stone-400 line-clamp-3 leading-relaxed">
+                    {scheme.description}
+                  </p>
                 </div>
 
-                <h3 className="text-base font-bold text-stone-900 dark:text-white leading-snug">
-                  {scheme.title}
-                </h3>
+                <div className="pt-4 mt-4 border-t border-stone-100 dark:border-stone-800 space-y-3">
+                  <div className="flex items-center justify-between text-[11px] text-stone-500 dark:text-stone-400 gap-2">
+                    <span className="flex items-center gap-1 truncate max-w-[60%]">
+                      <Building2 className="h-3.5 w-3.5 text-stone-400 shrink-0" />
+                      <span className="truncate">{scheme.authority || scheme.provider || "Ministry of Tribal Affairs"}</span>
+                    </span>
+                    <span className="flex items-center gap-1 shrink-0">
+                      <Calendar className="h-3.5 w-3.5 text-stone-400" />
+                      <span>{scheme.deadline || "2026-11-30"}</span>
+                    </span>
+                  </div>
 
-                <p className="text-xs text-stone-500 line-clamp-3 leading-relaxed">
-                  {scheme.description}
-                </p>
-              </div>
-
-              <div className="pt-5 mt-4 border-t border-stone-100 dark:border-stone-800 space-y-3">
-                <div className="flex items-center justify-between text-[11px] text-stone-500">
-                  <span className="flex items-center gap-1">
-                    <Building2 className="h-3.5 w-3.5 text-stone-400" />
-                    {scheme.provider || "Ministry of Tribal Affairs"}
-                  </span>
-                  <span className="flex items-center gap-1">
-                    <Calendar className="h-3.5 w-3.5 text-stone-400" />
-                    {scheme.deadline || "Active"}
-                  </span>
+                  <Link
+                    href={`/apply?schemeId=${schemeKey}`}
+                    className="w-full flex items-center justify-center gap-1.5 rounded-xl bg-orange-50 dark:bg-stone-800 text-orange-900 dark:text-orange-200 font-bold py-2.5 text-xs hover:bg-orange-100 dark:hover:bg-stone-700 transition-colors shadow-2xs"
+                  >
+                    <span>{t("applyWithAutoFill")}</span>
+                    <ArrowRight className="h-3.5 w-3.5" />
+                  </Link>
                 </div>
-
-                <Link
-                  href={`/apply?schemeId=${scheme.id}`}
-                  className="w-full flex items-center justify-center gap-1.5 rounded-xl bg-orange-50 dark:bg-stone-800 text-orange-900 dark:text-orange-200 font-bold py-2 text-xs hover:bg-orange-100 transition-colors"
-                >
-                  {t("applyWithAutoFill")} <ArrowRight className="h-3.5 w-3.5" />
-                </Link>
               </div>
-            </div>
-          );
-        })}
+            );
+          })}
         </div>
       </section>
     </div>
