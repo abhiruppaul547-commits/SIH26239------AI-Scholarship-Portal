@@ -407,9 +407,19 @@ def text_to_speech(req: TTSRequest):
     if not content:
         raise HTTPException(status_code=400, detail="Text cannot be empty.")
 
-    # Clean markdown, bullets, and excessive spaces
-    clean_text = re.sub(r"[#*_`~>\[\]]", " ", content)
+    # Clean LaTeX, markdown, bullets, and excessive spaces
+    clean_text = re.sub(r"\$\$[\s\S]*?\$\$", " ", content)
+    clean_text = re.sub(r"\$[^$]+\$", " ", clean_text)
+    clean_text = re.sub(r"\\[a-zA-Z]+", " ", clean_text)
+    clean_text = re.sub(r"[{}\\^=_~`*#>\[\]]", " ", clean_text)
     clean_text = re.sub(r"https?://\S+", "", clean_text)
+    clean_text = re.sub(r"\bMoTA\b", "Ministry of Tribal Affairs", clean_text)
+    clean_text = re.sub(r"\bST\b", "S T", clean_text)
+    clean_text = re.sub(r"\bPDEs?\b", "P D E", clean_text)
+    clean_text = re.sub(r"\bODEs?\b", "O D E", clean_text)
+    clean_text = re.sub(r"\bIITs?\b", "I I T", clean_text)
+    clean_text = re.sub(r"\bNITs?\b", "N I T", clean_text)
+    clean_text = clean_text.replace("₹", "Rupees ").replace("≤", "less than or equal to ")
     clean_text = re.sub(r"\s+", " ", clean_text).strip()
 
     if not clean_text:
@@ -424,13 +434,13 @@ def text_to_speech(req: TTSRequest):
     try:
         from gtts import gTTS
         if norm_lang == "bn":
-            tts = gTTS(text=clean_text, lang="bn", slow=False)
+            tts = gTTS(text=clean_text, lang="bn", tld="co.in", slow=False)
         elif norm_lang == "hi":
-            tts = gTTS(text=clean_text, lang="hi", slow=False)
+            tts = gTTS(text=clean_text, lang="hi", tld="co.in", slow=False)
         elif norm_lang == "as":
-            tts = gTTS(text=clean_text, lang="bn", slow=False)
+            tts = gTTS(text=clean_text, lang="bn", tld="co.in", slow=False)
         elif norm_lang == "sat":
-            tts = gTTS(text=clean_text, lang="hi", slow=False)
+            tts = gTTS(text=clean_text, lang="hi", tld="co.in", slow=False)
         else: # Indian English accent
             tts = gTTS(text=clean_text, lang="en", tld="co.in", slow=False)
 

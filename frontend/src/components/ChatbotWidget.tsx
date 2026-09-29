@@ -152,9 +152,28 @@ function formatBotMessage(text: string) {
 
 function stripMarkdown(text: string): string {
   return text
-    .replace(/[*#_~`>]/g, "")
+    // Remove LaTeX math blocks and symbols
+    .replace(/\$\$[\s\S]*?\$\$/g, " ")
+    .replace(/\$[^$]+\$/g, " ")
+    .replace(/\\frac\{([^}]+)\}\{([^}]+)\}/g, "$1 over $2")
+    .replace(/\\[a-zA-Z]+/g, " ")
+    .replace(/[{}\\^=_~`*#]/g, " ")
+    // Remove markdown links & formatting
     .replace(/\[([^\]]+)\]\([^)]+\)/g, "$1")
+    // Expand acronyms for natural speaking
+    .replace(/MoTA/g, "Ministry of Tribal Affairs")
+    .replace(/\bST\b/g, "S T")
+    .replace(/\bPDEs?\b/g, "P D E")
+    .replace(/\bODEs?\b/g, "O D E")
+    .replace(/\bDBT\b/g, "Direct Benefit Transfer")
+    .replace(/\bOCR\b/g, "O C R")
+    .replace(/\bIITs?\b/g, "I I T")
+    .replace(/\bNITs?\b/g, "N I T")
+    .replace(/₹/g, "Rupees ")
+    .replace(/≤/g, "less than or equal to ")
+    // Remove emojis and UI bullets
     .replace(/[\u{1F600}-\u{1F64F}\u{1F300}-\u{1F5FF}\u{1F680}-\u{1F6FF}\u{2600}-\u{26FF}\u{2700}-\u{27BF}]/gu, "")
+    .replace(/[•\-\|]/g, ", ")
     .replace(/\s+/g, " ")
     .trim();
 }
@@ -317,16 +336,28 @@ export default function ChatbotWidget() {
       const voices = window.speechSynthesis.getVoices();
       const prefix = targetLang.split("-")[0];
 
-      // Prioritize natural neural/online Indic regional voices (Google, Microsoft Natural)
-      let bestVoice = voices.find(
-        (v) =>
-          (v.lang.toLowerCase().startsWith(prefix) || v.lang.toLowerCase() === targetLang.toLowerCase()) &&
-          /natural|online|google/i.test(v.name)
-      );
+      // Prioritize natural neural/online Indic regional voices
+      let bestVoice: SpeechSynthesisVoice | undefined;
 
-      // Fallback to any voice matching target language
-      if (!bestVoice) {
-        bestVoice = voices.find((v) => v.lang.toLowerCase().startsWith(prefix));
+      if (prefix === "en") {
+        bestVoice =
+          voices.find(
+            (v) =>
+              /en[-_]in/i.test(v.lang) ||
+              /india|neerja|prabhat|heera|ravi/i.test(v.name)
+          ) ||
+          voices.find(
+            (v) =>
+              v.lang.toLowerCase().startsWith("en") &&
+              /natural|online|google/i.test(v.name)
+          ) ||
+          voices.find((v) => v.lang.toLowerCase().startsWith("en"));
+      } else {
+        bestVoice = voices.find(
+          (v) =>
+            (v.lang.toLowerCase().startsWith(prefix) || v.lang.toLowerCase() === targetLang.toLowerCase()) &&
+            /natural|online|google/i.test(v.name)
+        ) || voices.find((v) => v.lang.toLowerCase().startsWith(prefix));
       }
 
       // For Assamese ('as') or Santhali ('sat'), use Eastern Indic voice (bn-IN or hi-IN)
