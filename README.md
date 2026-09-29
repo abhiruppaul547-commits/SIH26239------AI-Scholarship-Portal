@@ -82,6 +82,18 @@ flowchart TD
 
 ---
 
+## 🧪 Testing the Live Site
+
+> **IMPORTANT**: Evaluators and users cannot simply sign in immediately. You must **create an account first**. Registering an account provisions your user record directly inside the Firebase Authentication and Realtime Database services.
+
+### 📋 Steps for Testing the Portal:
+- **Step 1:** Visit the live Vercel deployment URL.
+- **Step 2:** Navigate to the **Sign Up / Create Account** tab.
+- **Step 3:** Register a new account using your original, valid email ID (this ensures Firebase Auth provisions your user record correctly).
+- **Step 4:** Once successfully registered, navigate back to the **Login** screen and sign in with your new credentials to access the ST Scholarship Dashboard.
+
+---
+
 ## ⚡ Quick Start & Local Execution Guide
 
 ### Prerequisites
